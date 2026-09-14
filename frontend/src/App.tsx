@@ -10,16 +10,13 @@ import Learn from '@/pages/Learn';
 
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Home />,
-  },
-  {
     path: '/login',
     element: <Login />,
   },
   {
     element: <AppLayout />,
     children: [
+      { path: '/', element: <Home /> },
       { path: '/unpack', element: <Unpack /> },
       { path: '/my-bag', element: <MyBag /> },
       { path: '/start-here', element: <StartHere /> },

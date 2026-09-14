@@ -1,15 +1,15 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-cream">
-      <Navbar />
-      <main className="pt-4 pb-20 md:pt-20 md:pb-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          <Outlet />
-        </div>
+    <div className="min-h-screen bg-surface font-body-md text-body-md text-on-surface flex flex-col">
+      <Header />
+      <main className="w-full pt-20 bg-surface flex-1">
+        <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }
