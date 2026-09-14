@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UnpackResponse",
+  "description": "Structured output from AI mind dump unpacking",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "List of extracted baggage items from user's mind dump",
+      "items": {
+        "type": "object",
+        "required": ["title", "category", "urgency"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Short descriptive title of the concern/task",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "enum": ["academic", "deadline", "social", "personal", "health", "financial", "other"],
+            "description": "Category of the baggage item"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "Estimated urgency level"
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 20
+    }
+  },
+  "additionalProperties": false
+}

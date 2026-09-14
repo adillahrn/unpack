@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QuestSuggestion",
+  "description": "AI-generated small actionable step for a baggage item",
+  "type": "object",
+  "required": ["title", "duration", "xp"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Specific small action the user can take",
+      "maxLength": 200
+    },
+    "duration": {
+      "type": "integer",
+      "description": "Estimated duration in minutes",
+      "minimum": 1,
+      "maximum": 30
+    },
+    "xp": {
+      "type": "integer",
+      "description": "Experience points awarded",
+      "minimum": 5,
+      "maximum": 50
+    }
+  },
+  "additionalProperties": false
+}
