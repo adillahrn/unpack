@@ -44,7 +44,7 @@ CREATE POLICY "Users can update own profile"
 -- UNLOADS (Mind Dumps)
 -- ============================================
 CREATE TABLE unloads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   raw_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -69,7 +69,7 @@ CREATE POLICY "Users can delete own unloads"
 -- BAGGAGE ITEMS
 -- ============================================
 CREATE TABLE baggage_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   unload_id UUID NOT NULL REFERENCES unloads(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('academic', 'deadline', 'social', 'personal', 'health', 'financial', 'other')),
@@ -125,7 +125,7 @@ CREATE POLICY "Users can delete own baggage items"
 -- QUESTS
 -- ============================================
 CREATE TABLE quests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   baggage_id UUID NOT NULL REFERENCES baggage_items(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
