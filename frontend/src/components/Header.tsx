@@ -52,9 +52,13 @@ export default function Header() {
             >
               Unpack your mind
             </Link>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <Link
+              to="/login"
+              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
+              aria-label="Login"
+            >
               <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </div>
+            </Link>
           </div>
         </div>
       </header>

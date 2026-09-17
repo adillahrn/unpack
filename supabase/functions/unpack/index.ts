@@ -153,6 +153,26 @@ serve(async (req: Request) => {
       )
     }
 
+    // Set up Supabase client bound to the caller's auth header
+    const authHeader = req.headers.get('Authorization')
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: { headers: { Authorization: authHeader ?? '' } }
+      }
+    )
+
+    // ADDED: verify the caller is a logged-in user before doing anything else
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', errorKey: 'unpack.error.unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Get API key from environment secret
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
@@ -177,22 +197,13 @@ serve(async (req: Request) => {
       }
     }
 
-    // Save to database
-    const authHeader = req.headers.get('Authorization')
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: { headers: { Authorization: authHeader ?? '' } }
-      }
-    )
-
     const insertRows = result.items.map((item) => ({
       unload_id: unload_id,
       title: item.title,
       category: item.category,
       urgency: item.urgency,
       action_step: item.actionStep,
+      user_id: user.id, // ADDED: tie each row to the authenticated user
     }))
 
     const { data: insertedItems, error: dbError } = await supabaseClient
