@@ -10,7 +10,7 @@
       "description": "List of extracted baggage items from user's mind dump",
       "items": {
         "type": "object",
-        "required": ["title", "category", "urgency"],
+        "required": ["title", "category", "urgency", "actionStep"],
         "properties": {
           "title": {
             "type": "string",
@@ -26,6 +26,11 @@
             "type": "string",
             "enum": ["high", "medium", "low"],
             "description": "Estimated urgency level"
+          },
+          "actionStep": {
+            "type": "string",
+            "description": "One small concrete action step the user can take right now",
+            "maxLength": 200
           }
         },
         "additionalProperties": false

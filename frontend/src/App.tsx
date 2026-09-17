@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { I18nProvider } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
@@ -27,5 +28,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <I18nProvider defaultLocale="id">
+      <RouterProvider router={router} />
+    </I18nProvider>
+  );
 }
