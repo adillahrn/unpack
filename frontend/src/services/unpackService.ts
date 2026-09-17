@@ -37,7 +37,8 @@ export async function unpackMindDump(rawText: string): Promise<UnpackResult> {
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    throw new UnpackError('unpack.error.unknown');
+    console.error('Auth error or no user:', authError);
+    throw new UnpackError('unpack.error.auth');
   }
 
   // Create an unload record first

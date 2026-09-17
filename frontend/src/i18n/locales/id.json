@@ -5,6 +5,7 @@
   "unpack.loading": "Pax sedang menyortir pikiranmu...",
   "unpack.success": "Berhasil di-unpack! ✨",
   "unpack.error.empty": "Tulis sesuatu dulu sebelum unpack.",
+  "unpack.error.auth": "Kamu harus login terlebih dahulu.",
   "unpack.error.network": "Gagal terhubung ke server. Coba lagi.",
   "unpack.error.server": "Terjadi kesalahan di server. Coba lagi nanti.",
   "unpack.error.parse": "AI gagal memproses. Coba lagi.",

@@ -88,6 +88,7 @@ export default function Unpack() {
       const result = await unpackMindDump(text);
       setUnpackState({ isLoading: false, error: null, data: result });
     } catch (err) {
+      console.error('handleUnpack caught error:', err);
       const errorKey = err instanceof UnpackError ? err.i18nKey : 'unpack.error.unknown';
       setUnpackState({ isLoading: false, error: errorKey, data: null });
     }
