@@ -36,9 +36,9 @@ export default function Login() {
 
       <Link to="/" className="relative z-10 flex items-center gap-space-sm mb-space-xl">
         <img
-          alt="UNPACK Brand Logo with Pax"
+          alt="UNPACK Brand Logo"
           className="h-8 w-auto object-contain"
-          src="https://lh3.googleusercontent.com/aida/AEtjO1Ukem3LNXgKtxLVnmwa5dfQrgc7ORW4-_FtCnt3HAc1TR5-24qTooqjP6KSuAzIqnqYz03t24sHJ8tc67C8DEqed7QWkShWQziQ2TkYp7AO7D0SOZbgKglsrFSNbNVEkFyNYjgJtghrcv5ih9Ncxy12TrbRTJQE2fAPcaz3l6KCflwIV46OypXPLe63z1HSB6IGLNqO4A4z8XfJRNWmmeJf3Z5ymQM9hoV6ZZ0PlSvSCd4vdXttjQUyeCg"
+          src="/unpack_logo.png"
         />
         <span className="font-headline-md text-headline-md text-on-surface tracking-tight font-extrabold">
           UNPACK

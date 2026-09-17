@@ -5,6 +5,7 @@
   "unpack.loading": "Pax is sorting your thoughts...",
   "unpack.success": "Successfully unpacked! ✨",
   "unpack.error.empty": "Write something first before unpacking.",
+  "unpack.error.auth": "You need to log in first.",
   "unpack.error.network": "Failed to connect to server. Try again.",
   "unpack.error.server": "Server error occurred. Try again later.",
   "unpack.error.parse": "AI failed to process. Try again.",
