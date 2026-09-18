@@ -1,4 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   { path: '/', label: 'Home' },
@@ -10,6 +12,13 @@ const navItems = [
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { session } = useAuth();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   return (
     <>
@@ -52,13 +61,28 @@ export default function Header() {
             >
               Unpack your mind
             </Link>
-            <Link
-              to="/login"
-              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
-              aria-label="Login"
-            >
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </Link>
+
+            {session ? (
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer group"
+                title={`Logout (${session.user?.email ?? ''})`}
+              >
+                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
+                  logout
+                </span>
+                <span>Logout</span>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
+                aria-label="Login"
+                title="Login"
+              >
+                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -68,7 +92,6 @@ export default function Header() {
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map(({ path, label }) => {
             const isActive = location.pathname === path;
-            // Map labels to some material icons
             let icon = 'home';
             if (path === '/unpack') icon = 'psychology';
             if (path === '/start-here') icon = 'play_circle';

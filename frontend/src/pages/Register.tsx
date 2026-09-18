@@ -13,39 +13,59 @@ function GoogleIcon() {
   );
 }
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
-    if (!email.trim() || !password) {
-      setError('Email dan password wajib diisi.');
+    if (!name.trim()) {
+      setError('Nama lengkap wajib diisi.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Password dan konfirmasi password tidak cocok.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password minimal 6 karakter.');
       return;
     }
 
     setLoading(true);
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        data: { name: name.trim() },
+      },
     });
 
     setLoading(false);
 
-    if (signInError) {
-      setError('Email atau password salah.');
+    if (signUpError) {
+      setError(signUpError.message);
       return;
     }
 
     if (data.session) {
       navigate('/unpack');
+      return;
     }
+
+    setSuccess('Pendaftaran berhasil! Cek email kamu untuk verifikasi sebelum login.');
   };
 
   const handleGoogleLogin = async () => {
@@ -80,10 +100,10 @@ export default function Login() {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 bg-primary-fixed/60 -rotate-1 rounded-sm shadow-sm pointer-events-none" />
 
         <h2 className="text-headline-md text-on-surface mb-space-xs text-center">
-          Welcome back
+          Create account
         </h2>
         <p className="text-body-sm text-on-surface-variant text-center mb-space-lg">
-          Sign in to continue your journey
+          Join UNPACK and start unpacking your mind
         </p>
 
         {error && (
@@ -93,7 +113,29 @@ export default function Login() {
           </div>
         )}
 
+        {success && (
+          <div className="mb-space-md p-space-sm rounded-lg bg-secondary-container text-on-secondary-container text-body-sm flex items-center gap-space-xs">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            <span>{success}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-space-md">
+          <div>
+            <label htmlFor="name" className="block text-label-md text-on-surface-variant mb-space-xs">
+              Full Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              placeholder="Nama lengkap kamu"
+              required
+            />
+          </div>
+
           <div>
             <label htmlFor="email" className="block text-label-md text-on-surface-variant mb-space-xs">
               Email
@@ -104,7 +146,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="you@university.edu"
+              placeholder="nama@email.com"
               required
             />
           </div>
@@ -119,7 +161,22 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="••••••••"
+              placeholder="Minimal 6 karakter"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-label-md text-on-surface-variant mb-space-xs">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              placeholder="Ulangi password"
               required
             />
           </div>
@@ -132,11 +189,11 @@ export default function Login() {
             {loading ? (
               <>
                 <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                <span>Signing in…</span>
+                <span>Membuat akun…</span>
               </>
             ) : (
               <>
-                <span>Sign In</span>
+                <span>Sign Up</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </>
             )}
@@ -160,9 +217,9 @@ export default function Login() {
         </button>
 
         <p className="text-center text-body-sm text-on-surface-variant mt-space-lg">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-primary font-semibold hover:underline">
-            Sign Up
+          Sudah punya akun?{' '}
+          <Link to="/login" className="text-primary font-semibold hover:underline">
+            Sign In
           </Link>
         </p>
       </div>
