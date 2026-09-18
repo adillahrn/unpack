@@ -1,8 +1,10 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { I18nProvider } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
+import Register from '@/pages/Register';
 import Unpack from '@/pages/Unpack';
 import MyBag from '@/pages/MyBag';
 import StartHere from '@/pages/StartHere';
@@ -15,14 +17,53 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: '/register',
+    element: <Register />,
+  },
+  {
     element: <AppLayout />,
     children: [
       { path: '/', element: <Home /> },
-      { path: '/unpack', element: <Unpack /> },
-      { path: '/my-bag', element: <MyBag /> },
-      { path: '/start-here', element: <StartHere /> },
-      { path: '/progress', element: <Progress /> },
-      { path: '/learn', element: <Learn /> },
+      {
+        path: '/unpack',
+        element: (
+          <ProtectedRoute>
+            <Unpack />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/my-bag',
+        element: (
+          <ProtectedRoute>
+            <MyBag />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/start-here',
+        element: (
+          <ProtectedRoute>
+            <StartHere />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/progress',
+        element: (
+          <ProtectedRoute>
+            <Progress />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/learn',
+        element: (
+          <ProtectedRoute>
+            <Learn />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ]);
