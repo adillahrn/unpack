@@ -1,3 +1,6 @@
+import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import PaxChat from '@/components/PaxChat';
 import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/i18n';
@@ -61,6 +64,7 @@ export default function Unpack() {
   const [isBreathing, setIsBreathing] = useState(false);
   const [breatheLabel, setBreatheLabel] = useState('Breathe');
   const [unpackState, setUnpackState] = useState<UnpackState>(initialUnpackState);
+  const [showChat, setShowChat] = useState(false);
 
   // Selection & Saving state
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
@@ -338,42 +342,54 @@ export default function Unpack() {
             </div>
           </div>
 
-          {/* Pax Companion Sticky Panel */}
+          {/* PAX Companion — Chat Entry Card */}
           <div className="lg:col-span-4 flex flex-col gap-space-md">
-            <div className="bg-surface-container-high rounded-xl p-space-lg shadow-sm relative overflow-hidden transition-all hover:shadow-md">
+            <div
+              className="bg-surface-container-high rounded-xl p-space-lg shadow-sm relative overflow-hidden transition-all hover:shadow-md cursor-pointer group"
+              onClick={() => setShowChat(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setShowChat(true)}
+            >
               <div className="absolute -top-2 left-6 w-16 h-5 bg-amber-200/80 rotate-2 rounded-xs shadow-xs pointer-events-none mix-blend-multiply" />
-              <div className="flex items-start gap-space-md">
-                <div className="relative shrink-0 mt-1">
-                  <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center shadow-inner relative overflow-hidden ring-4 ring-surface-container-lowest">
-                    <span className="material-symbols-outlined text-primary text-[32px] animate-bounce">backpack</span>
+
+              <div className="flex items-center gap-space-md mb-space-md">
+                <div className="relative shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center shadow-inner overflow-hidden ring-4 ring-surface-container-lowest">
+                    <img src="/unpack_logo.png" alt="PAX" className="w-8 h-8 object-contain" />
                   </div>
                   <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center ring-2 ring-surface-container-high">
-                    <span className="w-2 h-2 rounded-full bg-secondary" />
+                    <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                   </span>
                 </div>
-                <div className="flex-1 bg-surface-container-lowest rounded-xl p-space-md shadow-xs relative">
-                  <div className="absolute -left-2 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-r-[8px] border-r-surface-container-lowest border-b-[6px] border-b-transparent" />
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-label-sm font-bold text-primary uppercase">Pax • Your Companion</span>
-                    <span className="text-label-sm text-outline">Just now</span>
-                  </div>
-                  <p className="text-body-sm text-on-surface leading-snug">
-                    {unpackState.isLoading
-                      ? `"${t('unpack.loading')}"`
-                      : items.length > 0
-                        ? `"${t('unpack.results.paxRead')} It's not one giant mountain. It's just ${items.length} distinct, conquerable pebbles."`
-                        : '"Just get it out. No judgement here — I\'ll help you untangle this knot and unpack it piece by piece! ✨"'}
-                  </p>
+                <div>
+                  <span className="text-label-sm font-bold text-primary uppercase tracking-wider">PAX • Your Companion</span>
                 </div>
               </div>
-              <div className="mt-space-md bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
+
+              <p className="text-body-md text-on-surface leading-relaxed mb-space-lg">
+                I'm here to listen, no judgement.
+              </p>
+
+              <button
+                type="button"
+                className="w-full inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] group-hover:translate-y-[1px] group-hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
+              >
+                <span>Talk to PAX</span>
+                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+              </button>
+            </div>
+
+            {/* Breathe widget */}
+            <div className="bg-surface-container-high rounded-xl p-space-md shadow-xs">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-secondary text-[18px]">self_improvement</span>
                   <span className="text-label-sm text-on-surface-variant font-medium">Breathe in for 4s... hold 4s...</span>
                 </div>
                 <button
                   type="button"
-                  onClick={handleBreathe}
+                  onClick={(e) => { e.stopPropagation(); handleBreathe(); }}
                   className={`text-xs px-2.5 py-1 font-label-sm rounded-full transition-all cursor-pointer ${
                     isBreathing
                       ? 'bg-secondary text-on-secondary'
@@ -385,7 +401,8 @@ export default function Unpack() {
               </div>
             </div>
 
-            <div className="bg-amber-50 rounded-xl p-space-md shadow-xs rotate-[-0.8deg] hover:rotate-0 transition-transform duration-200">
+            {/* Sticky note */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-space-md shadow-xs rotate-[-0.8deg] hover:rotate-0 transition-transform duration-200">
               <div className="flex items-center gap-space-xs mb-1">
                 <span className="material-symbols-outlined text-tertiary text-[16px]">push_pin</span>
                 <span className="text-label-sm font-bold text-tertiary uppercase">Campus Mind-Rule #1</span>
@@ -395,6 +412,9 @@ export default function Unpack() {
               </p>
             </div>
           </div>
+
+          {/* PAX Chat Overlay */}
+          {showChat && <PaxChat onClose={() => setShowChat(false)} />}
         </div>
 
         {/* Live Unpacked Baggage Section — only show when we have results */}

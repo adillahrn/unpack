@@ -78,6 +78,56 @@
   --font-family-sans: "Plus Jakarta Sans", sans-serif;
 }
 
+.dark {
+  --color-surface-dim: #151218;
+  --color-on-tertiary-container: #ffddb8;
+  --color-primary-fixed: #e9ddff;
+  --color-on-error: #690005;
+  --color-primary-container: #7a3fd9;
+  --color-surface-bright: #3b3839;
+  --color-on-surface: #e8e0de;
+  --color-on-tertiary-fixed: #2a1700;
+  --color-on-primary-fixed: #23005c;
+  --color-surface-container-lowest: #0e0d0e;
+  --color-on-background: #e8e0de;
+  --color-inverse-primary: #6b38d4;
+  --color-surface-container: #231f20;
+  --color-error: #ffb4ab;
+  --color-surface-variant: #49454f;
+  --color-on-primary-container: #f0e8ff;
+  --color-tertiary-container: #8a5100;
+  --color-background: #151218;
+  --color-tertiary-fixed-dim: #ffb95f;
+  --color-secondary-container: #005236;
+  --color-primary: #d0bcff;
+  --color-on-secondary: #003822;
+  --color-on-tertiary-fixed-variant: #653e00;
+  --color-surface-container-highest: #37322f;
+  --color-outline-variant: #49454f;
+  --color-secondary: #4edea3;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-surface-tint: #d0bcff;
+  --color-on-surface-variant: #cac4d0;
+  --color-on-secondary-fixed: #002113;
+  --color-on-primary: #381e72;
+  --color-on-tertiary: #462a00;
+  --color-secondary-fixed: #6ffbbe;
+  --color-primary-fixed-dim: #d0bcff;
+  --color-on-secondary-fixed-variant: #005236;
+  --color-tertiary: #ffb95f;
+  --color-inverse-surface: #e8e0de;
+  --color-on-secondary-container: #6cf8bb;
+  --color-surface-container-high: #2c2728;
+  --color-on-primary-fixed-variant: #5516be;
+  --color-outline: #948f99;
+  --color-surface-container-low: #1c1b1c;
+  --color-tertiary-fixed: #ffddb8;
+  --color-surface: #151218;
+  --color-on-error-container: #ffdad6;
+  --color-inverse-on-surface: #342f2e;
+  --color-error-container: #93000a;
+}
+
 @utility text-headline-sm {
   font-size: 20px;
   line-height: 28px;
@@ -142,6 +192,9 @@
 }
 
 @layer base {
+  html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
   html, body {
     margin: 0;
     padding: 0;
@@ -155,6 +208,22 @@
   main > :last-child {
     margin-bottom: 0 !important;
   }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 ::-webkit-scrollbar {
