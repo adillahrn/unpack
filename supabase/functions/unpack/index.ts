@@ -197,31 +197,8 @@ serve(async (req: Request) => {
       }
     }
 
-    const insertRows = result.items.map((item) => ({
-      unload_id: unload_id,
-      title: item.title,
-      category: item.category,
-      urgency: item.urgency,
-      action_step: item.actionStep,
-      user_id: user.id, // ADDED: tie each row to the authenticated user
-    }))
-
-    const { data: insertedItems, error: dbError } = await supabaseClient
-      .from('baggage_items')
-      .insert(insertRows)
-      .select()
-
-    if (dbError) {
-      console.error('Database insert error:', dbError)
-      // Still return AI results even if DB save fails
-      return new Response(
-        JSON.stringify({ ...result, dbError: 'Failed to save, but results are available' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     return new Response(
-      JSON.stringify({ items: result.items, savedItems: insertedItems }),
+      JSON.stringify({ items: result.items }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

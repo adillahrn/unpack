@@ -9,6 +9,7 @@ export interface BaggageItem {
 
 export interface UnpackResult {
   items: BaggageItem[];
+  unloadId: string;
 }
 
 export interface UnpackState {
@@ -75,7 +76,7 @@ export async function unpackMindDump(rawText: string): Promise<UnpackResult> {
     throw new UnpackError(data.errorKey);
   }
 
-  return { items: data.items };
+  return { items: data.items, unloadId: unload.id };
 }
 
 /**

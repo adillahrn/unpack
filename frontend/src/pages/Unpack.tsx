@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/i18n';
+import { supabase } from '@/lib/supabaseClient';
 import {
   unpackMindDump,
   UnpackError,
@@ -53,6 +54,7 @@ const defaultText =
 
 export default function Unpack() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [text, setText] = useState(defaultText);
   const [weight, setWeight] = useState(3);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
@@ -60,12 +62,32 @@ export default function Unpack() {
   const [breatheLabel, setBreatheLabel] = useState('Breathe');
   const [unpackState, setUnpackState] = useState<UnpackState>(initialUnpackState);
 
+  // Selection & Saving state
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const charCount = text.length;
   const items = unpackState.data?.items ?? [];
+
+  // When AI returns results, select all items by default
+  useEffect(() => {
+    if (items.length > 0) {
+      setSelectedIndices(items.map((_, i) => i));
+      setSaveSuccessMessage(null);
+      setSaveError(null);
+    } else {
+      setSelectedIndices([]);
+    }
+  }, [items]);
 
   const handleClear = useCallback(() => {
     setText('');
     setUnpackState(initialUnpackState);
+    setSelectedIndices([]);
+    setSaveSuccessMessage(null);
+    setSaveError(null);
   }, []);
 
   const handleBreathe = useCallback(() => {
@@ -83,6 +105,8 @@ export default function Unpack() {
     if (unpackState.isLoading) return;
 
     setUnpackState({ isLoading: true, error: null, data: null });
+    setSaveSuccessMessage(null);
+    setSaveError(null);
 
     try {
       const result = await unpackMindDump(text);
@@ -93,6 +117,64 @@ export default function Unpack() {
       setUnpackState({ isLoading: false, error: errorKey, data: null });
     }
   }, [text, unpackState.isLoading]);
+
+  const handleToggleSelect = useCallback((index: number) => {
+    setSelectedIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (selectedIndices.length === items.length) {
+      setSelectedIndices([]);
+    } else {
+      setSelectedIndices(items.map((_, i) => i));
+    }
+  }, [selectedIndices.length, items]);
+
+  const handleSaveToBag = useCallback(async () => {
+    if (selectedIndices.length === 0 || !unpackState.data?.unloadId || isSaving) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccessMessage(null);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('Not authenticated');
+      }
+
+      const selectedItems = selectedIndices.map((index) => items[index]);
+      const insertRows = selectedItems.map((item) => ({
+        unload_id: unpackState.data!.unloadId,
+        user_id: user.id,
+        title: item.title,
+        category: item.category,
+        urgency: item.urgency,
+        action_step: item.actionStep,
+        status: 'pending',
+      }));
+
+      const { error: dbError } = await supabase.from('baggage_items').insert(insertRows);
+
+      if (dbError) {
+        console.error('Save to bag error:', dbError);
+        throw dbError;
+      }
+
+      setSaveSuccessMessage(`${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} saved to My Bag! 🎒`);
+    } catch (err: any) {
+      console.error('Save to bag failed:', err);
+      setSaveError(err.message || 'Failed to save items to bag.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedIndices, items, unpackState.data, isSaving]);
 
   const handleFilterClick = useCallback((category: FilterCategory) => {
     setActiveFilter(category);
@@ -123,7 +205,6 @@ export default function Unpack() {
   return (
     <div className="flex flex-col w-full">
       <div className="w-full max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-md">
-
         {/* Top Step Bar & Overline */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
           <div className="inline-flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full shadow-sm w-fit">
@@ -157,7 +238,6 @@ export default function Unpack() {
 
         {/* Bento Upper Desk: Mind Dump Sandbox & Pax Speech Companion */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start mb-space-xl">
-
           {/* Input Sandbox */}
           <div className="lg:col-span-8 flex flex-col relative">
             <div className="absolute -top-3 left-12 w-24 h-6 bg-yellow-200/60 -rotate-2 rounded-sm shadow-xs z-10 pointer-events-none mix-blend-multiply" />
@@ -333,11 +413,20 @@ export default function Unpack() {
                   {t('unpack.results.title')}
                 </h2>
               </div>
-              <div className="bg-surface-container px-space-md py-space-xs rounded-xl shadow-xs flex items-center gap-space-sm max-w-md">
-                <span className="material-symbols-outlined text-primary text-[20px] shrink-0">psychology_alt</span>
-                <p className="text-body-sm text-on-surface-variant">
-                  <strong className="text-on-surface">{t('unpack.results.paxRead')}</strong> It's not one giant mountain. It's just {items.length} distinct, conquerable pebbles:
-                </p>
+
+              {/* Selection Bar Actions */}
+              <div className="flex items-center gap-space-sm bg-surface-container px-space-md py-space-xs rounded-xl shadow-xs">
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAll}
+                  className="text-label-md font-bold text-primary hover:underline cursor-pointer"
+                >
+                  {selectedIndices.length === items.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="text-outline">•</span>
+                <span className="text-body-sm text-on-surface-variant">
+                  <strong className="text-on-surface">{selectedIndices.length}</strong> of {items.length} selected
+                </span>
               </div>
             </div>
 
@@ -359,38 +448,88 @@ export default function Unpack() {
               ))}
             </div>
 
-            {/* Dynamic Baggage Cards Grid */}
+            {/* Dynamic Baggage Cards Grid with Checkboxes */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-space-xl">
-              {items.filter((item) => isCardVisible(item.category)).map((item, index) => (
-                <BaggageCard key={index} item={item} t={t} />
-              ))}
+              {items.map((item, index) => {
+                if (!isCardVisible(item.category)) return null;
+                const isSelected = selectedIndices.includes(index);
+                return (
+                  <BaggageCard
+                    key={index}
+                    item={item}
+                    t={t}
+                    isSelected={isSelected}
+                    onToggle={() => handleToggleSelect(index)}
+                  />
+                );
+              })}
             </div>
 
-            {/* Unpack Balance Score */}
-            <div className="bg-surface-container-low rounded-xl p-space-lg shadow-xs mb-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md">
+            {/* Save to Bag Bar */}
+            <div className="bg-surface-container-low rounded-xl p-space-lg shadow-md mb-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md border border-outline-variant/30">
               <div className="flex items-center gap-space-md w-full md:w-auto">
-                <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0">
-                  <span className="material-symbols-outlined text-[24px]">balance</span>
+                <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0">
+                  <span className="material-symbols-outlined text-[24px]">backpack</span>
                 </div>
                 <div>
-                  <div className="flex items-center gap-space-xs">
-                    <span className="text-headline-sm text-on-surface">Unpack Balance Score</span>
-                    <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-label-sm font-bold">
-                      Defused by {Math.min(100, Math.round((items.length / Math.max(items.length, 1)) * 65 + 35))}%
-                    </span>
-                  </div>
+                  <h3 className="text-headline-sm text-on-surface font-bold">Select items to put in your Bag</h3>
                   <p className="text-body-sm text-on-surface-variant">
-                    By separating actionable steps from waiting and self-care, your burden is already lighter.
+                    {selectedIndices.length === 0
+                      ? 'Check the items above that you want to carry today.'
+                      : `Ready to save ${selectedIndices.length} selected item${selectedIndices.length > 1 ? 's' : ''} to My Bag.`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-space-sm w-full md:w-64">
-                <div className="flex-1 bg-surface-variant rounded-full h-3 overflow-hidden">
-                  <div className="bg-secondary h-full rounded-full transition-all duration-1000" style={{ width: '65%' }} />
-                </div>
-                <span className="text-label-md font-bold text-secondary">65% Clearer</span>
+
+              <div className="flex flex-col sm:flex-row items-center gap-space-sm w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSaveToBag}
+                  disabled={selectedIndices.length === 0 || isSaving}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs px-space-xl py-space-md rounded-full bg-secondary text-on-secondary text-label-lg font-bold shadow-[0_3px_0_#005236] hover:translate-y-[1px] hover:shadow-[0_2px_0_#005236] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {isSaving ? (
+                    <>
+                      <span>Saving to Bag…</span>
+                      <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[20px]">add_task</span>
+                      <span>Save ({selectedIndices.length}) to My Bag 🎒</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Save Success Banner */}
+            {saveSuccessMessage && (
+              <div className="mb-space-xl p-space-md rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-between gap-space-md shadow-md animate-fade-in">
+                <div className="flex items-center gap-space-sm">
+                  <span className="material-symbols-outlined text-secondary text-2xl">check_circle</span>
+                  <div>
+                    <h4 className="font-headline-sm text-headline-sm font-bold">{saveSuccessMessage}</h4>
+                    <p className="text-body-sm text-on-secondary-container/80">Items are now stored in your bag visualizer.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/my-bag')}
+                  className="px-space-md py-space-xs rounded-full bg-secondary text-on-secondary text-label-md font-bold hover:opacity-90 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Open My Bag →
+                </button>
+              </div>
+            )}
+
+            {/* Save Error Banner */}
+            {saveError && (
+              <div className="mb-space-xl p-space-md rounded-xl bg-error-container text-on-error-container flex items-center gap-space-sm shadow-sm">
+                <span className="material-symbols-outlined text-error text-2xl">error</span>
+                <p className="text-body-sm text-on-error-container">{saveError}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -433,22 +572,54 @@ export default function Unpack() {
   );
 }
 
-/** Renders a single baggage card with dynamic styling based on urgency/category */
-function BaggageCard({ item, t }: { item: BaggageItem; t: (key: string) => string }) {
+/** Renders a single baggage card with dynamic styling based on urgency/category and a selection checkbox */
+function BaggageCard({
+  item,
+  t,
+  isSelected,
+  onToggle,
+}: {
+  item: BaggageItem;
+  t: (key: string) => string;
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
   const colors = URGENCY_COLORS[item.urgency] ?? URGENCY_COLORS.medium;
   const emoji = CATEGORY_EMOJI[item.category] ?? '📌';
 
   return (
-    <div className="baggage-card group relative bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+    <div
+      onClick={onToggle}
+      className={`baggage-card group relative rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 ${
+        isSelected
+          ? 'bg-surface-container-lowest border-secondary ring-2 ring-secondary/30'
+          : 'bg-surface-container-lowest/80 border-transparent opacity-80 hover:opacity-100'
+      }`}
+    >
       {/* Washi tape */}
       <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 ${colors.tape} rotate-[-1deg] rounded-xs shadow-xs pointer-events-none mix-blend-multiply group-hover:rotate-0 transition-transform`} />
+
       <div>
         <div className="flex items-center justify-between mb-space-sm pt-1">
           <span className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}>
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
             {t(`unpack.urgency.${item.urgency}`)}
           </span>
+
+          {/* Selection Checkbox */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+              isSelected ? 'bg-secondary text-on-secondary shadow-sm' : 'bg-surface-container border border-outline-variant text-transparent'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px] font-bold">check</span>
+          </div>
         </div>
+
         <h3 className="text-headline-sm text-on-surface mb-1">{item.title}</h3>
         <p className="text-label-md text-on-surface-variant mb-space-md flex items-center gap-1">
           <span>{emoji} {t(`unpack.category.${item.category}`)}</span>
@@ -458,6 +629,7 @@ function BaggageCard({ item, t }: { item: BaggageItem; t: (key: string) => strin
           <span className="text-label-md text-on-surface font-bold">{item.actionStep.split(' ').slice(0, 4).join(' ')}...</span>
         </div>
       </div>
+
       <div className="bg-amber-50/80 rounded-lg p-space-sm mt-space-sm relative">
         <div className="flex items-start gap-1.5">
           <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">lightbulb</span>
