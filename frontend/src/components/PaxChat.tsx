@@ -30,19 +30,21 @@ const MOOD_RECOMMENDATIONS: Record<string, { emoji: string; text: string; link?:
   ],
 };
 
-const MENTAL_HEALTH_TIPS = [
-  { step: 1, text: 'Put your phone down' },
-  { step: 2, text: 'Take 5 slow breaths' },
-  { step: 3, text: 'Drink some water' },
-  { step: 4, text: 'Return when ready' },
-];
-
 const PAX_GREETING: ChatMessage = {
   id: 'greeting',
   role: 'model',
   text: "Hey, I'm here. What's on your mind?",
   timestamp: Date.now(),
 };
+
+const QUICK_PROMPTS = [
+  { emoji: '🔥', text: 'Tips agar tidak burnout' },
+  { emoji: '🎯', text: 'Rekomendasikan kegiatan yang menyenangkan' },
+  { emoji: '😴', text: 'Aku susah tidur akhir-akhir ini' },
+  { emoji: '💪', text: 'Cara menjaga semangat belajar' },
+  { emoji: '🧘', text: 'Bantu aku tenangkan pikiran' },
+  { emoji: '💚', text: 'Aku butuh dukungan mental health' },
+];
 
 /* ── Component ───────────────────────────────────────────────── */
 
@@ -56,7 +58,6 @@ export default function PaxChat({ onClose }: PaxChatProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [currentMood, setCurrentMood] = useState<MoodResult | null>(null);
   const [showDistressCard, setShowDistressCard] = useState(false);
-  const [showTips, setShowTips] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,7 +89,6 @@ export default function PaxChat({ onClose }: PaxChatProps) {
     setShowDistressCard(false);
     setError(null);
     setShowMenu(false);
-    setShowTips(false);
   }, []);
 
   const handleClearConversation = useCallback(() => {
@@ -97,7 +97,6 @@ export default function PaxChat({ onClose }: PaxChatProps) {
     setShowDistressCard(false);
     setError(null);
     setShowMenu(false);
-    setShowTips(false);
   }, []);
 
   const handleSend = useCallback(async () => {
@@ -150,6 +149,51 @@ export default function PaxChat({ onClose }: PaxChatProps) {
       setIsTyping(false);
     }
   }, [input, isTyping, messages]);
+
+  const handleQuickPrompt = useCallback((promptText: string) => {
+    if (isTyping) return;
+    // Use a microtask to ensure state is set before triggering send
+    setTimeout(() => {
+      setInput('');
+      const userMsg: ChatMessage = {
+        id: createMessageId(),
+        role: 'user',
+        text: promptText,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      setError(null);
+
+      if (scanForDistress(promptText)) {
+        setShowDistressCard(true);
+      }
+
+      const history = messages
+        .filter((m) => m.id !== 'greeting')
+        .map((m) => ({ role: m.role, text: m.text }));
+
+      setIsTyping(true);
+
+      sendChatMessage(promptText, history)
+        .then((response) => {
+          const paxMsg: ChatMessage = {
+            id: createMessageId(),
+            role: 'model',
+            text: response.reply,
+            timestamp: Date.now(),
+          };
+          setMessages((prev) => [...prev, paxMsg]);
+          setCurrentMood(response.mood);
+          if (response.distress) setShowDistressCard(true);
+        })
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
+        })
+        .finally(() => {
+          setIsTyping(false);
+        });
+    }, 0);
+  }, [isTyping, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -257,6 +301,26 @@ export default function PaxChat({ onClose }: PaxChatProps) {
             </div>
           ))}
 
+          {/* Quick prompt suggestions — show only at start */}
+          {messages.length <= 1 && !isTyping && (
+            <div className="flex justify-start">
+              <div className="w-7 shrink-0 mr-space-xs" />
+              <div className="flex flex-wrap gap-2 max-w-[85%] animate-[fadeIn_0.4s_ease-out]">
+                {QUICK_PROMPTS.map((prompt, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleQuickPrompt(prompt.text)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-low hover:bg-surface-container text-body-sm text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-primary/40 transition-all duration-200 cursor-pointer hover:shadow-sm active:scale-[0.97]"
+                  >
+                    <span className="text-[14px]">{prompt.emoji}</span>
+                    <span>{prompt.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Mood-based recommendations (inline after messages) */}
           {recommendations && !showDistressCard && (
             <div className="flex justify-start">
@@ -343,52 +407,22 @@ export default function PaxChat({ onClose }: PaxChatProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Tips panel ────────────────────────────── */}
-        {showTips && (
-          <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-low px-space-lg py-space-md animate-[fadeIn_0.2s_ease-out]">
-            <div className="flex items-center justify-between mb-space-sm">
-              <span className="text-label-md font-bold text-on-surface">Take a short reset</span>
-              <button
-                type="button"
-                onClick={() => setShowTips(false)}
-                className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-            <div className="space-y-space-xs">
-              {MENTAL_HEALTH_TIPS.map((tip) => (
-                <div key={tip.step} className="flex items-center gap-space-sm">
-                  <span className="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container text-label-sm font-bold flex items-center justify-center shrink-0">
-                    {tip.step}
-                  </span>
-                  <span className="text-body-sm text-on-surface-variant">{tip.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── Input bar ─────────────────────────────── */}
         <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-lowest px-space-md py-space-sm">
-          {/* Tips toggle */}
-          <div className="flex items-center gap-space-sm mb-space-xs">
-            <button
-              type="button"
-              onClick={() => setShowTips(!showTips)}
-              className={`inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full text-label-sm font-medium transition-colors cursor-pointer ${
-                showTips
-                  ? 'bg-secondary-container text-on-secondary-container'
-                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-              }`}
-            >
-              <span className="text-[13px]">💡</span>
-              Tips
-            </button>
-          </div>
-
           {/* Input row */}
           <div className="flex items-end gap-space-xs">
+            {/* Tips lightbulb button */}
+            <button
+              type="button"
+              onClick={() => handleQuickPrompt('Berikan aku tips menjaga kesehatan mental hari ini')}
+              disabled={isTyping}
+              className="w-10 h-10 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant hover:text-on-secondary-container flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              aria-label="Mental health tips"
+              title="Mental health tips"
+            >
+              <span className="material-symbols-outlined text-[20px]">lightbulb</span>
+            </button>
             <textarea
               ref={inputRef}
               value={input}
