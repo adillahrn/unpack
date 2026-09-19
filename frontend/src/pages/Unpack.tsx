@@ -578,11 +578,15 @@ function BaggageCard({
       }`}
     >
       {/* Washi tape */}
-      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 ${colors.tape} rotate-[-1deg] rounded-xs shadow-xs pointer-events-none mix-blend-multiply group-hover:rotate-0 transition-transform`} />
+      <div
+        className={`absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 ${colors.tape} rotate-[-1deg] rounded-xs shadow-xs pointer-events-none mix-blend-multiply group-hover:rotate-0 transition-transform`}
+      />
 
       <div>
         <div className="flex items-center justify-between mb-space-sm pt-1">
-          <span className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}>
+          <span
+            className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}
+          >
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
             {t(`unpack.urgency.${item.urgency}`)}
           </span>
@@ -594,28 +598,40 @@ function BaggageCard({
               onToggle();
             }}
             className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-              isSelected ? 'bg-secondary text-on-secondary shadow-sm' : 'bg-surface-container border border-outline-variant text-transparent'
+              isSelected
+                ? 'bg-secondary text-on-secondary shadow-sm'
+                : 'bg-surface-container border border-outline-variant text-transparent'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px] font-bold">check</span>
+            <span className="material-symbols-outlined text-[16px] font-bold">
+              check
+            </span>
           </div>
         </div>
 
-        <h3 className="text-headline-sm text-on-surface mb-1">{item.title}</h3>
+        <h3 className="text-headline-sm text-on-surface mb-1">
+          {item.title}
+        </h3>
+
         <p className="text-label-md text-on-surface-variant mb-space-md flex items-center gap-1">
-          <span>{emoji} {t(`unpack.category.${item.category}`)}</span>
+          <span>
+            {emoji} {t(`unpack.category.${item.category}`)}
+          </span>
         </p>
-        <div className="bg-surface-container-low rounded-lg p-space-sm mb-space-md flex items-center justify-between">
-          <span className="text-body-sm text-on-surface-variant">{t('unpack.results.effort')}</span>
-          <span className="text-label-md text-on-surface font-bold">{item.actionStep.split(' ').slice(0, 4).join(' ')}...</span>
-        </div>
       </div>
 
+      {/* PAX Note */}
       <div className="bg-amber-50/80 rounded-lg p-space-sm mt-space-sm relative">
         <div className="flex items-start gap-1.5">
-          <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">lightbulb</span>
+          <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">
+            lightbulb
+          </span>
+
           <p className="text-body-sm text-on-surface leading-tight">
-            <strong className="text-tertiary">{t('unpack.results.paxNote')}</strong> "{item.actionStep}"
+            <strong className="text-tertiary">
+              {t('unpack.results.paxNote')}
+            </strong>{' '}
+            "{item.actionStep}"
           </p>
         </div>
       </div>
