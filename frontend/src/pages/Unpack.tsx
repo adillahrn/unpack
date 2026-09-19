@@ -151,7 +151,10 @@ export default function Unpack() {
         throw new Error('Not authenticated');
       }
 
-      const selectedItems = selectedIndices.map((index) => items[index]);
+      const selectedItems = selectedIndices
+        .map((index) => items[index])
+        .filter((item): item is BaggageItem => item !== undefined);
+        
       const insertRows = selectedItems.map((item) => ({
         unload_id: unpackState.data!.unloadId,
         user_id: user.id,
@@ -602,7 +605,7 @@ function BaggageCard({
   isSelected: boolean;
   onToggle: () => void;
 }) {
-  const colors = URGENCY_COLORS[item.urgency] ?? URGENCY_COLORS.medium;
+  const colors = URGENCY_COLORS[item.urgency] ?? URGENCY_COLORS.medium!;
   const emoji = CATEGORY_EMOJI[item.category] ?? '📌';
 
   return (
