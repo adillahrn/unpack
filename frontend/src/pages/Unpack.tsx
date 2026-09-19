@@ -1,8 +1,6 @@
-import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import PaxChat from '@/components/PaxChat';
 import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PaxChat from '@/components/PaxChat';
 import { useTranslation } from '@/i18n';
 import { supabase } from '@/lib/supabaseClient';
 import {
