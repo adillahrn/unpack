@@ -765,7 +765,7 @@ export default function Unwind() {
                     </div>
                   </div>
                   <p className="font-body-md text-[14px] text-on-surface leading-relaxed italic">
-                    "You don't have to fix everything. Maybe just one tiny thing. If you want to stop after two minutes, that still counts as a win."
+                    "You don't have to fix everything. Maybe just one tiny thing."
                   </p>
                   <div className="mt-4 pt-3 flex items-center gap-2 text-tertiary font-label-sm text-[12px] font-bold">
                     <span className="material-symbols-outlined text-[16px]">energy_savings_leaf</span>

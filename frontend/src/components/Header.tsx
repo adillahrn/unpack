@@ -90,13 +90,6 @@ export default function Header() {
               </span>
             </button>
 
-            <Link
-              to="/unpack"
-              className="hidden sm:inline-flex items-center justify-center px-space-lg py-space-sm rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all"
-            >
-              Unpack your mind
-            </Link>
-
             {session ? (
               <button
                 onClick={handleLogout}

@@ -364,13 +364,13 @@ export default function MyBag() {
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>Pack New Thought</span>
               </button>
-              <button
-                onClick={() => setIsBreatheModalOpen(true)}
+              <Link
+                to="/unwind#quick-resets-section"
                 className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all shadow-sm cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px] text-primary">air</span>
-                <span className="hidden sm:inline">2-Min Reset</span>
-              </button>
+                <span className="material-symbols-outlined text-[18px] text-primary">spa</span>
+                <span className="hidden sm:inline">Quick Reset</span>
+              </Link>
             </div>
           </div>
         </div>
