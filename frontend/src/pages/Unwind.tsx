@@ -555,7 +555,7 @@ export default function Unwind() {
               {/* Left */}
               <div className="lg:col-span-7 flex flex-col items-start">
                 <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">
-                  You can pause here.
+                  You can pause here or start here.
                 </h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant mt-4 max-w-xl">
                   Nothing needs to be solved right now. Give your nervous system two quiet minutes before carrying anything else.
@@ -689,7 +689,7 @@ export default function Unwind() {
           </section>
 
           {/* ═══════════════════════════════════ SECTION 03: SMALL ACTION ══ */}
-          <section className="py-10 mb-8">
+          <section className="py-10 mb-8" id="small-action-section">
             <div className="bg-surface-container-low/70 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden">
               {/* Washi tape corner */}
               <div className="absolute -top-3 right-12 w-28 h-6 bg-[#fed7aa]/70 shadow-sm rotate-[2.5deg] z-10 pointer-events-none rounded-[2px]" />
@@ -757,11 +757,10 @@ export default function Unwind() {
                 <div className="lg:col-span-4 bg-[#fef9c3]/70 p-5 rounded-2xl shadow-sm flex flex-col justify-between self-stretch">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-surface-container-lowest flex items-center justify-center shadow-sm">
-                      <img alt="Pax" className="w-7 h-7 object-contain" src={PAX_IMG} />
+                      <img alt="Pax" className="w-7 h-7 object-contain" src="/pax_holdingtea.png" />
                     </div>
                     <div>
                       <div className="font-headline-sm text-[15px] text-on-surface font-bold">Pax's Reminder</div>
-                      <div className="font-label-sm text-[12px] text-tertiary font-semibold">Zero grades here</div>
                     </div>
                   </div>
                   <p className="font-body-md text-[14px] text-on-surface leading-relaxed italic">

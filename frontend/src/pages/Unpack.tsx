@@ -534,17 +534,17 @@ export default function Unpack() {
             </div>
             <div>
               <span className="text-label-sm uppercase tracking-wider text-primary font-bold">Next Phase</span>
-              <h3 className="text-headline-md text-on-surface">Ready to tackle the next step?</h3>
+              <h3 className="text-headline-md text-on-surface">Feeling ready for one small step?</h3>
               <p className="text-body-sm text-on-surface-variant">
-                We'll take just the single top priority card and build a cozy 15-minute start plan.
+                We'll take just the single top priority card for a frictionless 10-minute start.
               </p>
             </div>
           </div>
           <Link
-            to="/start-here"
+            to="/unwind#small-action-section"
             className="inline-flex items-center justify-center gap-space-sm px-space-xl py-space-md rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
           >
-            <span>Proceed to 'Start Here'</span>
+            <span>Proceed to Small Action</span>
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </Link>
         </div>
