@@ -1,43 +1,50 @@
 // PAX-CHAT Edge Function — Supportive AI companion for students
-// Uses the same Gemini model as UNPACK
+// Uses Groq with GPT-OSS 20B
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
 }
 
-const SYSTEM_PROMPT = `You are PAX, a warm and supportive AI companion for university students. You are NOT a therapist, counselor, or medical professional. You do NOT diagnose conditions or provide clinical advice.
+const SYSTEM_PROMPT = `You are PAX, a warm and supportive AI companion for university students.
+
+You are NOT a therapist, counselor, or medical professional.
+You do NOT diagnose conditions or provide clinical advice.
 
 Your personality:
 - Warm, empathetic, and non-judgmental
-- Speak casually like a caring friend — not formal or clinical
-- Use simple, comforting language
-- Respond in the same language the user writes in (Indonesian or English)
-- Keep responses concise (2-4 sentences usually, unless the topic needs more)
+- Speak casually like a caring friend
+- Use simple and comforting language
+- Respond in the same language as the user
+- Keep responses concise, usually 2-4 sentences
 
 What you DO:
 - Listen actively and validate feelings
-- Offer practical, small self-care tips (breathing, hydration, rest)
-- Encourage healthy habits and perspective shifts
-- Suggest the user talk to a trusted person or professional when appropriate
-- Help with study motivation and burnout prevention tips
+- Offer small practical self-care tips
+- Encourage healthy habits
+- Help with study motivation and burnout prevention
+- Encourage talking to trusted people or professionals when appropriate
 
 What you DO NOT do:
 - Diagnose mental health conditions
-- Provide therapy or psychological treatment
-- Prescribe medication or medical advice
+- Provide psychological treatment
+- Prescribe medication
 - Make assumptions about the user's mental state
 - Minimize or dismiss their feelings
 
-If a user expresses thoughts of self-harm or suicide, respond with empathy and immediately encourage them to contact:
-- Into The Light Indonesia: 119 ext 8
-- Or talk to someone they trust
+If a user expresses thoughts of self-harm or suicide:
+- Respond with empathy
+- Encourage them to contact someone they trust
+- Encourage contacting emergency or professional support
 
-You MUST respond ONLY with valid JSON in this exact format:
+You MUST return ONLY valid JSON.
+
+Format:
 {
-  "reply": "your supportive response here",
+  "reply": "your response",
   "mood": {
     "label": "happy|sad|anxious|calm|energized",
     "confidence": 0.0
@@ -46,10 +53,10 @@ You MUST respond ONLY with valid JSON in this exact format:
 }
 
 Rules:
-- confidence must be a number between 0 and 1
-- distress must be true only when the user expresses self-harm, suicidal ideation, or severe emotional crisis
-- Do not include markdown
-- Do not include any text outside the JSON`
+- confidence must be between 0 and 1
+- distress must be true only for self-harm, suicidal ideation, or severe emotional crisis
+- No markdown
+- No text outside the JSON`
 
 interface ChatHistory {
   role: 'user' | 'model'
@@ -72,7 +79,10 @@ function validateResponse(parsed: unknown): PaxResponse {
 
   const obj = parsed as Record<string, unknown>
 
-  if (typeof obj.reply !== 'string' || !obj.reply.trim()) {
+  if (
+    typeof obj.reply !== 'string' ||
+    !obj.reply.trim()
+  ) {
     throw new Error('Missing reply')
   }
 
@@ -82,7 +92,13 @@ function validateResponse(parsed: unknown): PaxResponse {
 
   const mood = obj.mood as Record<string, unknown>
 
-  const validMoods = ['happy', 'sad', 'anxious', 'calm', 'energized']
+  const validMoods = [
+    'happy',
+    'sad',
+    'anxious',
+    'calm',
+    'energized',
+  ]
 
   if (
     typeof mood.label !== 'string' ||
@@ -113,46 +129,56 @@ function validateResponse(parsed: unknown): PaxResponse {
   }
 }
 
-async function callGemini(
+async function callGroq(
   message: string,
   history: ChatHistory[],
   apiKey: string,
 ): Promise<PaxResponse> {
 
-  // Build conversation history
-  const conversation = history
-    .map((msg) => {
-      const role = msg.role === 'model' ? 'PAX' : 'User'
-      return `${role}: ${msg.text}`
+  const messages = [
+    {
+      role: 'system',
+      content: SYSTEM_PROMPT,
+    },
+  ]
+
+  // Add conversation history
+  for (const msg of history) {
+    messages.push({
+      role: msg.role === 'model'
+        ? 'assistant'
+        : 'user',
+      content: msg.text,
     })
-    .join('\n')
+  }
 
-  const prompt = `${SYSTEM_PROMPT}
-
-${conversation ? `Conversation history:\n${conversation}\n\n` : ''}User's current message:
-${message}`
+  // Add current message
+  messages.push({
+    role: 'user',
+    content: message,
+  })
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
+
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
       },
+
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-          maxOutputTokens: 512,
+        model: 'openai/gpt-oss-20b',
+
+        messages,
+
+        temperature: 0.7,
+
+        max_tokens: 512,
+
+        response_format: {
+          type: 'json_object',
         },
       }),
     },
@@ -160,16 +186,19 @@ ${message}`
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`Gemini API error ${response.status}: ${errText}`)
+
+    throw new Error(
+      `Groq API error ${response.status}: ${errText}`,
+    )
   }
 
   const result = await response.json()
 
   const generatedText =
-    result.candidates?.[0]?.content?.parts?.[0]?.text
+    result.choices?.[0]?.message?.content
 
   if (!generatedText) {
-    throw new Error('No response text from Gemini')
+    throw new Error('No response text from Groq')
   }
 
   const parsed = JSON.parse(generatedText)
@@ -179,7 +208,7 @@ ${message}`
 
 serve(async (req: Request) => {
 
-  // Handle CORS preflight
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: corsHeaders,
@@ -187,7 +216,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { message, history = [] } = await req.json()
+
+    const {
+      message,
+      history = [],
+    } = await req.json()
 
     if (
       !message ||
@@ -202,45 +235,55 @@ serve(async (req: Request) => {
           status: 400,
           headers: {
             ...corsHeaders,
-            'Content-Type': 'application/json',
+            'Content-Type':
+              'application/json',
           },
         },
       )
     }
 
-    // Get Gemini API key
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+    // Get Groq API key
+    const groqApiKey =
+      Deno.env.get('GROQ_API_KEY')
 
-    if (!geminiApiKey) {
+    if (!groqApiKey) {
+
       console.error(
-        'GEMINI_API_KEY not configured in environment secrets',
+        'GROQ_API_KEY not configured',
       )
 
-      throw new Error('AI service not configured')
+      throw new Error(
+        'AI service not configured',
+      )
     }
 
-    // Call Gemini with retry
     let result: PaxResponse
 
+    // First attempt
     try {
-      result = await callGemini(
+
+      result = await callGroq(
         message,
         history,
-        geminiApiKey,
+        groqApiKey,
       )
+
     } catch (firstError) {
 
       console.warn(
-        'First Gemini attempt failed, retrying...',
+        'First Groq attempt failed, retrying...',
         firstError,
       )
 
+      // Retry once
       try {
-        result = await callGemini(
+
+        result = await callGroq(
           message,
           history,
-          geminiApiKey,
+          groqApiKey,
         )
+
       } catch (retryError) {
 
         console.error(
@@ -257,7 +300,8 @@ serve(async (req: Request) => {
             status: 502,
             headers: {
               ...corsHeaders,
-              'Content-Type': 'application/json',
+              'Content-Type':
+                'application/json',
             },
           },
         )
@@ -273,7 +317,8 @@ serve(async (req: Request) => {
       {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
+          'Content-Type':
+            'application/json',
         },
       },
     )
@@ -294,7 +339,8 @@ serve(async (req: Request) => {
         status: 500,
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
+          'Content-Type':
+            'application/json',
         },
       },
     )
