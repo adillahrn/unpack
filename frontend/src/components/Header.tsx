@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 const navItems = [
   { path: '/', label: 'Home' },
   { path: '/unpack', label: 'Unpack' },
-  { path: '/start-here', label: 'Start Here' },
+  { path: '/unwind', label: 'Unwind' },
   { path: '/my-bag', label: 'My Bag' },
 ];
 
@@ -129,7 +129,7 @@ export default function Header() {
             const isActive = location.pathname === path;
             let icon = 'home';
             if (path === '/unpack') icon = 'psychology';
-            if (path === '/start-here') icon = 'play_circle';
+            if (path === '/unwind') icon = 'air';
             if (path === '/my-bag') icon = 'backpack';
 
             return (

@@ -7,7 +7,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Unpack from '@/pages/Unpack';
 import MyBag from '@/pages/MyBag';
-import StartHere from '@/pages/StartHere';
+import Unwind from '@/pages/Unwind';
 import Learn from '@/pages/Learn';
 
 const router = createBrowserRouter([
@@ -40,10 +40,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: '/start-here',
+        path: '/unwind',
         element: (
           <ProtectedRoute>
-            <StartHere />
+            <Unwind />
           </ProtectedRoute>
         ),
       },

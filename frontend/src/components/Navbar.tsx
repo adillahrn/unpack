@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Backpack, Home, Brain, BarChart3, BookOpen, Compass } from 'lucide-react';
+import { Backpack, Home, Brain, BarChart3, BookOpen, Wind } from 'lucide-react';
 
 const navItems = [
   { path: '/unpack', label: 'Unpack', icon: Brain },
   { path: '/my-bag', label: 'My Bag', icon: Backpack },
-  { path: '/start-here', label: 'Start Here', icon: Compass },
+  { path: '/unwind', label: 'Unwind', icon: Wind },
   { path: '/learn', label: 'Learn', icon: BookOpen },
 ];
 
