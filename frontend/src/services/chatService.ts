@@ -50,13 +50,7 @@ const BASE_RETRY_DELAY_MS = 5_000; // 5 seconds base
 /**
  * Extracts a retry delay (in ms) from the error, falling back to exponential backoff.
  */
-function getRetryDelay(errorMsg: string, attempt: number): number {
-  // Try to parse "retry in Xs" from the Gemini error message
-  const match = errorMsg.match(/retry\s+in\s+([\d.]+)s/i);
-  if (match) {
-    return Math.ceil(parseFloat(match[1]) * 1000) + 500; // add 500ms buffer
-  }
-  // Exponential backoff: 5s, 10s, 20s
+function getRetryDelay(_errorMsg: string, attempt: number): number {
   return BASE_RETRY_DELAY_MS * Math.pow(2, attempt);
 }
 
