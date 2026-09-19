@@ -551,12 +551,6 @@ export default function Unwind() {
 
           {/* ═══════════════════════════════════════════════════════ HERO ══ */}
           <section className="pt-8 md:pt-12 pb-10">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-low text-primary shadow-sm mb-6">
-              <span className="material-symbols-outlined text-[16px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
-              <span className="font-label-sm text-label-sm tracking-wider uppercase">Quiet Sanctuary {"\u00B7"} No to-do pressure</span>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left */}
               <div className="lg:col-span-7 flex flex-col items-start">
@@ -576,33 +570,6 @@ export default function Unwind() {
                       <span className={`w-2 h-2 rounded-full ${dot}`} />{label}
                     </span>
                   ))}
-                </div>
-              </div>
-
-              {/* Right — Pax card */}
-              <div className="lg:col-span-5 relative mt-4 lg:mt-0">
-                {/* Washi tape */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#fef08a]/80 shadow-sm rotate-[-1.5deg] z-20 pointer-events-none rounded-[2px]" />
-                <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_8px_20px_-4px_rgba(41,37,36,0.08)] relative z-10 flex items-start gap-4">
-                  <div className="w-16 h-16 shrink-0 rounded-2xl bg-[#ffedd5] flex items-center justify-center shadow-inner relative overflow-hidden">
-                    <img alt="Pax the backpack companion" className="w-12 h-12 object-contain" src={PAX_IMG} />
-                    <div className="absolute bottom-1 right-1 bg-surface-container-lowest rounded-full p-0.5 shadow">
-                      <span className="material-symbols-outlined text-[13px] text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>local_cafe</span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-headline-sm text-[16px] text-on-surface font-bold">Pax</span>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant px-2 py-0.5 rounded-full bg-[#fef08a]/60">holding warm tea</span>
-                    </div>
-                    <p className="font-body-md text-[15px] leading-relaxed text-on-surface-variant italic">
-                      "Pick whatever feels right. There's no wrong choice, no timer ticking against you, and zero report cards here."
-                    </p>
-                    <div className="mt-3 flex items-center gap-2 text-primary font-label-sm text-label-sm font-semibold">
-                      <span className="material-symbols-outlined text-[15px]">favorite</span>
-                      <span>Take a slow, deep shoulder drop</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -753,7 +720,7 @@ export default function Unwind() {
                     ? <div className="h-16 flex items-center justify-center"><div className="w-6 h-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>
                     : (
                       <div className="flex items-start gap-3.5">
-                        <div className="text-2xl mt-0.5">{bagItem?.urgency === 'high' ? '\u{1F393}' : '\u{1F4CC}'}</div>
+                        <div className="text-2xl mt-0.5">{bagItem?.urgency === 'high' ? '🎓' : '📌'}</div>
                         <div>
                           <h3 className="font-headline-sm text-headline-sm text-on-surface">{displayTitle}</h3>
                           <div className="mt-2 text-on-surface-variant font-body-md text-body-md">

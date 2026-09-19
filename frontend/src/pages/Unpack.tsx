@@ -218,14 +218,6 @@ export default function Unpack() {
             <span className="text-outline text-label-md">•</span>
             <span className="text-label-md text-on-surface-variant">Brain Dump &amp; Sorting</span>
           </div>
-          <div className="flex items-center gap-space-sm text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px] text-primary">spa</span>
-            <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-bold">Safe Desk Sanctuary</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
-            <span className="text-label-sm text-on-surface font-semibold bg-surface-container-low px-space-xs py-0.5 rounded">
-              {charCount} chars
-            </span>
-          </div>
         </div>
 
         {/* Main Section Header */}
@@ -379,38 +371,6 @@ export default function Unpack() {
                 <span>Talk to PAX</span>
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
               </button>
-            </div>
-
-            {/* Breathe widget */}
-            <div className="bg-surface-container-high rounded-xl p-space-md shadow-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-secondary text-[18px]">self_improvement</span>
-                  <span className="text-label-sm text-on-surface-variant font-medium">Breathe in for 4s... hold 4s...</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBreathe(); }}
-                  className={`text-xs px-2.5 py-1 font-label-sm rounded-full transition-all cursor-pointer ${
-                    isBreathing
-                      ? 'bg-secondary text-on-secondary'
-                      : 'bg-secondary-container text-on-secondary-container hover:brightness-95'
-                  }`}
-                >
-                  {breatheLabel}
-                </button>
-              </div>
-            </div>
-
-            {/* Sticky note */}
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-space-md shadow-xs rotate-[-0.8deg] hover:rotate-0 transition-transform duration-200">
-              <div className="flex items-center gap-space-xs mb-1">
-                <span className="material-symbols-outlined text-tertiary text-[16px]">push_pin</span>
-                <span className="text-label-sm font-bold text-tertiary uppercase">Campus Mind-Rule #1</span>
-              </div>
-              <p className="text-body-sm text-on-surface italic">
-                You don't have to carry the whole semester at 3:00 PM on a Tuesday. Just this single afternoon.
-              </p>
             </div>
           </div>
 

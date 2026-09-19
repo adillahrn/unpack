@@ -223,9 +223,6 @@ export default function Home() {
                 <span>Start Your First Mind Dump</span>
                 <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </Link>
-              <button className="inline-flex items-center justify-center gap-space-xs px-space-lg py-4 rounded-full bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface transition-all" type="button">
-                <span>Join Student Discord 💬</span>
-              </button>
             </div>
             <p className="font-label-sm text-label-sm text-on-surface-variant mt-6">
               Always calm • Never algorithmic • Made with care for university students
