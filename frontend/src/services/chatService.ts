@@ -91,7 +91,12 @@ export async function sendChatMessage(
     if (error) {
       console.error(`pax-chat error (attempt ${attempt + 1}):`, error);
 
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+      const errorMessage = error?.message ?? '';
+
+      if (
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('NetworkError')
+      ) {
         throw new Error('Gagal terhubung ke server. Periksa koneksi internetmu.');
       }
 
@@ -106,7 +111,7 @@ export async function sendChatMessage(
               if (body.error) backendMsg = body.error;
             }
           }
-          if (!backendMsg && 'message' in error && error.message) {
+          if (!backendMsg && 'message' in error && typeof error.message === 'string') {
             backendMsg = error.message;
           }
         }
@@ -116,7 +121,10 @@ export async function sendChatMessage(
 
       // If rate-limited and we still have retries, wait and retry
       if (isRateLimitError(error) && attempt < MAX_RETRIES) {
-        const delay = getRetryDelay(backendMsg || error.message || '', attempt);
+        const delay = getRetryDelay(
+          backendMsg || errorMessage,
+          attempt
+        );
         console.log(`Rate limited — retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 2}/${MAX_RETRIES + 1})`);
         await sleep(delay);
         continue;
