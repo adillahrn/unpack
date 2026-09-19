@@ -5,7 +5,6 @@ const navItems = [
   { path: '/unpack', label: 'Unpack', icon: Brain },
   { path: '/my-bag', label: 'My Bag', icon: Backpack },
   { path: '/start-here', label: 'Start Here', icon: Compass },
-  { path: '/progress', label: 'Progress', icon: BarChart3 },
   { path: '/learn', label: 'Learn', icon: BookOpen },
 ];
 

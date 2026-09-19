@@ -8,7 +8,6 @@ const navItems = [
   { path: '/unpack', label: 'Unpack' },
   { path: '/start-here', label: 'Start Here' },
   { path: '/my-bag', label: 'My Bag' },
-  { path: '/progress', label: 'Progress' },
 ];
 
 export default function Header() {
@@ -20,9 +19,11 @@ export default function Header() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('unpack-theme');
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (savedTheme === 'dark') {
       setIsDark(true);
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
@@ -130,7 +131,6 @@ export default function Header() {
             if (path === '/unpack') icon = 'psychology';
             if (path === '/start-here') icon = 'play_circle';
             if (path === '/my-bag') icon = 'backpack';
-            if (path === '/progress') icon = 'insights';
 
             return (
               <Link

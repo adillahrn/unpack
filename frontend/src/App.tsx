@@ -8,7 +8,6 @@ import Register from '@/pages/Register';
 import Unpack from '@/pages/Unpack';
 import MyBag from '@/pages/MyBag';
 import StartHere from '@/pages/StartHere';
-import Progress from '@/pages/Progress';
 import Learn from '@/pages/Learn';
 
 const router = createBrowserRouter([
@@ -45,14 +44,6 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <StartHere />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/progress',
-        element: (
-          <ProtectedRoute>
-            <Progress />
           </ProtectedRoute>
         ),
       },

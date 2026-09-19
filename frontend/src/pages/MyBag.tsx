@@ -802,9 +802,7 @@ export default function MyBag() {
                     </p>
                   </div>
                 </div>
-                <Link to="/progress" className="font-label-md text-label-md text-primary font-bold hover:underline shrink-0">
-                  View stats
-                </Link>
+                {/* Progress link removed */}
               </div>
             </div>
           </div>

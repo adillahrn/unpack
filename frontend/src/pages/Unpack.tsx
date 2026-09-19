@@ -75,14 +75,14 @@ export default function Unpack() {
 
   // When AI returns results, select all items by default
   useEffect(() => {
-    if (items.length > 0) {
-      setSelectedIndices(items.map((_, i) => i));
+    if (unpackState.data && unpackState.data.items.length > 0) {
+      setSelectedIndices(unpackState.data.items.map((_, i) => i));
       setSaveSuccessMessage(null);
       setSaveError(null);
     } else {
       setSelectedIndices([]);
     }
-  }, [items]);
+  }, [unpackState.data]);
 
   const handleClear = useCallback(() => {
     setText('');
