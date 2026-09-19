@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabaseClient';
+import LoadingState from '@/components/states/LoadingState';
+import EmptyState from '@/components/states/EmptyState';
 
 interface MicroStep {
   id: string;
@@ -8,11 +12,12 @@ interface MicroStep {
 
 interface BagItem {
   id: string;
-  slotKey: 'presentation' | 'algo' | 'chat' | 'walk' | string;
+  unload_id?: string;
+  slotKey: string;
   title: string;
   titleEmoji: string;
   badgeText: string;
-  badgeStyle: string; // Tailwind class string for badge
+  badgeStyle: string;
   description: string;
   pocketName: string;
   weightLabel: string;
@@ -26,84 +31,101 @@ interface BagItem {
   showMicrosteps?: boolean;
 }
 
-const initialItems: BagItem[] = [
-  {
-    id: 'card-presentation',
-    slotKey: 'presentation',
-    titleEmoji: '🎤',
-    title: 'Presentation Slides',
-    badgeText: 'Urgent • Today 4pm',
-    badgeStyle: 'bg-error-container text-on-error-container font-bold',
-    description: '3 bullet points drafted · Need concise transitions for slide 4 & 5.',
-    pocketName: 'Top Flap',
-    weightLabel: 'Weight: Moderate',
-    weightColorClass: 'text-secondary font-semibold',
-    category: 'urgent academic',
-    actionType: 'unpack',
-    actionLabel: 'Lighten Bag',
-    secondaryActionLabel: 'Edit Note',
-    completed: false,
-  },
-  {
-    id: 'card-algo',
-    slotKey: 'algo',
-    titleEmoji: '📚',
-    title: 'Algorithm Assignment',
-    badgeText: 'Due Friday',
-    badgeStyle: 'bg-primary-fixed text-on-primary-fixed-variant font-bold',
-    description: 'Graph traversal complexity analysis · Feels like a boulder right now.',
-    pocketName: 'Main Pocket',
-    weightLabel: 'Weight: Heavy',
-    weightColorClass: 'text-error font-semibold',
-    category: 'academic',
-    actionType: 'microstep',
-    actionLabel: 'Break into micro-steps',
-    secondaryActionLabel: 'Ask Pax advice',
-    completed: false,
+interface DBBaggageItem {
+  id: string;
+  unload_id: string;
+  user_id: string;
+  title: string;
+  category: 'academic' | 'deadline' | 'social' | 'personal' | 'health' | 'financial' | 'other';
+  urgency: 'high' | 'medium' | 'low';
+  action_step: string | null;
+  status: 'pending' | 'in_progress' | 'completed';
+  created_at: string;
+}
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  academic: '📚',
+  deadline: '🎤',
+  social: '👥',
+  personal: '🪫',
+  health: '💚',
+  financial: '💰',
+  other: '📌',
+};
+
+function mapDBToBagItem(db: DBBaggageItem): BagItem {
+  const isHighUrgency = db.urgency === 'high';
+  const isDeadline = db.category === 'deadline';
+  const isAcademic = db.category === 'academic';
+  const isSocial = db.category === 'social' || db.category === 'financial';
+
+  // Slot assignment based on category/urgency
+  let slotKey = 'algo';
+  let pocketName = 'Main Pocket';
+  if (isDeadline || (isHighUrgency && isAcademic)) {
+    slotKey = 'presentation';
+    pocketName = 'Top Flap';
+  } else if (isAcademic) {
+    slotKey = 'algo';
+    pocketName = 'Main Pocket';
+  } else if (isSocial) {
+    slotKey = 'chat';
+    pocketName = 'Side Mesh';
+  } else {
+    slotKey = 'walk';
+    pocketName = 'Front Pouch';
+  }
+
+  // Badge styling
+  let badgeStyle = 'bg-secondary-container text-on-secondary-container font-bold';
+  if (isHighUrgency) {
+    badgeStyle = 'bg-error-container text-on-error-container font-bold';
+  } else if (db.urgency === 'medium') {
+    badgeStyle = 'bg-primary-fixed text-on-primary-fixed-variant font-bold';
+  }
+
+  // Weight labeling
+  let weightLabel = 'Weight: Moderate';
+  let weightColorClass = 'text-secondary font-semibold';
+  if (isHighUrgency) {
+    weightLabel = 'Weight: Heavy';
+    weightColorClass = 'text-error font-semibold';
+  } else if (db.urgency === 'low') {
+    weightLabel = 'Weight: Light';
+    weightColorClass = 'text-on-surface-variant';
+  }
+
+  const isCompleted = db.status === 'completed';
+
+  return {
+    id: db.id,
+    unload_id: db.unload_id,
+    slotKey,
+    titleEmoji: CATEGORY_EMOJI[db.category] ?? '📌',
+    title: db.title,
+    badgeText: `${db.urgency.toUpperCase()} • ${db.category}`,
+    badgeStyle,
+    description: db.action_step || 'Packed from mind dump',
+    pocketName,
+    weightLabel,
+    weightColorClass,
+    category: `${db.urgency} ${db.category}`,
+    actionType: db.action_step ? 'microstep' : 'unpack',
+    actionLabel: db.action_step ? 'Micro-steps' : 'Lighten Bag',
+    secondaryActionLabel: 'Details',
+    completed: isCompleted,
     showMicrosteps: false,
-    microsteps: [
-      { id: 'ms-1', label: 'Read prompt only (no writing)', completed: false },
-      { id: 'ms-2', label: 'Sketch first node on scrap paper', completed: false },
-    ],
-  },
-  {
-    id: 'card-chat',
-    slotKey: 'chat',
-    titleEmoji: '👥',
-    title: 'Group Project Reply',
-    badgeText: 'Social friction',
-    badgeStyle: 'bg-surface-container text-on-surface-variant font-bold',
-    description: "Waiting for Sam's section confirmation before texting the group thread.",
-    pocketName: 'Side Mesh',
-    weightLabel: 'Weight: Light buzz',
-    weightColorClass: 'text-on-surface-variant',
-    category: 'personal',
-    actionType: 'snooze',
-    actionLabel: 'Snooze until 5pm',
-    secondaryActionLabel: 'Draft quick line',
-    completed: false,
-  },
-  {
-    id: 'card-walk',
-    slotKey: 'walk',
-    titleEmoji: '🪫',
-    title: 'Evening Walk & Recharge',
-    badgeText: 'Nourishing',
-    badgeStyle: 'bg-secondary-container text-on-secondary-container font-bold',
-    description: 'Scheduled for 8:00pm · 20 minutes under the quad trees without screens.',
-    pocketName: 'Front Pouch',
-    weightLabel: 'Weight: Anti-gravity',
-    weightColorClass: 'text-secondary font-semibold',
-    category: 'personal',
-    actionType: 'walk',
-    actionLabel: 'Start Now',
-    secondaryActionLabel: 'Set Reminder',
-    completed: false,
-  },
-];
+    microsteps: db.action_step
+      ? [{ id: `ms-${db.id}`, label: db.action_step, completed: isCompleted }]
+      : [],
+  };
+}
 
 export default function MyBag() {
-  const [items, setItems] = useState<BagItem[]>(initialItems);
+  const [items, setItems] = useState<BagItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [activeFilter, setActiveFilter] = useState<'all' | 'urgent' | 'academic' | 'personal'>('all');
   const [highlightedCardId, setHighlightedCardId] = useState<string | null>(null);
 
@@ -117,6 +139,35 @@ export default function MyBag() {
   const [breathePhaseIndex, setBreathePhaseIndex] = useState(0);
 
   const breathePhases = ['Inhale softly', 'Hold calm', 'Exhale tension', 'Rest in silence'];
+
+  // Fetch baggage items from Supabase
+  const fetchBagItems = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data: dbItems, error: fetchError } = await supabase
+        .from('baggage_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      if (dbItems && dbItems.length > 0) {
+        setItems(dbItems.map(mapDBToBagItem));
+      } else {
+        setItems([]);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch baggage items:', err);
+      setError(err.message || 'Failed to load items.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBagItems();
+  }, [fetchBagItems]);
 
   // Handle Box Breathing Timer
   useEffect(() => {
@@ -146,11 +197,32 @@ export default function MyBag() {
     }
   };
 
-  // Toggle item completion
-  const toggleComplete = (id: string) => {
+  // Toggle item completion in DB & state
+  const toggleComplete = async (id: string) => {
+    const currentItem = items.find((i) => i.id === id);
+    if (!currentItem) return;
+
+    const nextCompleted = !currentItem.completed;
+    const nextStatus = nextCompleted ? 'completed' : 'pending';
+
+    // Optimistic UI update
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+      prev.map((item) => (item.id === id ? { ...item, completed: nextCompleted } : item))
     );
+
+    // Update in Supabase
+    const { error: updateErr } = await supabase
+      .from('baggage_items')
+      .update({ status: nextStatus })
+      .eq('id', id);
+
+    if (updateErr) {
+      console.error('Failed to update status in DB:', updateErr);
+      // Rollback on error
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, completed: !nextCompleted } : item))
+      );
+    }
   };
 
   // Toggle microsteps panel
@@ -164,54 +236,78 @@ export default function MyBag() {
 
   // Toggle individual microstep check
   const toggleMicrostepCheck = (itemId: string, microstepId: string) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== itemId || !item.microsteps) return item;
-        return {
-          ...item,
-          microsteps: item.microsteps.map((ms) =>
-            ms.id === microstepId ? { ...ms, completed: !ms.completed } : ms
-          ),
-        };
-      })
-    );
+    toggleComplete(itemId);
   };
 
-  // Add new item
-  const handleSaveItem = () => {
+  // Add new item to Supabase & state
+  const handleSaveItem = async () => {
     if (!newThoughtTitle.trim()) return;
 
-    const defaultConfig = { pocketName: 'Main Pocket', emoji: '🎒', category: 'academic', slotKey: 'algo' };
-    const categoryMap: Record<string, { pocketName: string; emoji: string; category: string; slotKey: string }> = {
-      'Top Flap': { pocketName: 'Top Flap', emoji: '📝', category: 'urgent academic', slotKey: 'presentation' },
-      'Main Bag': defaultConfig,
-      'Side Mesh': { pocketName: 'Side Mesh', emoji: '💬', category: 'personal', slotKey: 'chat' },
-      'Front Pouch': { pocketName: 'Front Pouch', emoji: '🌿', category: 'personal', slotKey: 'walk' },
-    };
+    try {
+      const {
+        data: { user },
+        error: authErr,
+      } = await supabase.auth.getUser();
 
-    const config = categoryMap[selectedPocket] ?? defaultConfig;
+      if (authErr || !user) throw new Error('Not authenticated');
 
-    const newItem: BagItem = {
-      id: `card-${Date.now()}`,
-      slotKey: config.slotKey,
-      titleEmoji: config.emoji,
-      title: newThoughtTitle.trim(),
-      badgeText: 'New Thought',
-      badgeStyle: 'bg-primary-fixed text-on-primary-fixed-variant font-bold',
-      description: 'Recently packed into your mental bag.',
-      pocketName: config.pocketName,
-      weightLabel: 'Weight: Light',
-      weightColorClass: 'text-secondary font-semibold',
-      category: config.category,
-      actionType: 'unpack',
-      actionLabel: 'Lighten Bag',
-      secondaryActionLabel: 'Edit Note',
-      completed: false,
-    };
+      const categoryMap: Record<string, { category: 'academic' | 'deadline' | 'social' | 'personal'; urgency: 'high' | 'medium' | 'low' }> = {
+        'Top Flap': { category: 'deadline', urgency: 'high' },
+        'Main Bag': { category: 'academic', urgency: 'medium' },
+        'Side Mesh': { category: 'social', urgency: 'medium' },
+        'Front Pouch': { category: 'personal', urgency: 'low' },
+      };
 
-    setItems((prev) => [newItem, ...prev]);
-    setNewThoughtTitle('');
-    setIsAddModalOpen(false);
+      const config = categoryMap[selectedPocket] ?? { category: 'academic', urgency: 'medium' };
+
+      // Get or create an unload_id
+      let unloadId: string | null = null;
+      const { data: latestUnload } = await supabase
+        .from('unloads')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestUnload) {
+        unloadId = latestUnload.id;
+      } else {
+        const { data: newUnload } = await supabase
+          .from('unloads')
+          .insert({ user_id: user.id, raw_text: newThoughtTitle.trim() })
+          .select('id')
+          .single();
+        if (newUnload) unloadId = newUnload.id;
+      }
+
+      if (!unloadId) throw new Error('Could not create unload record');
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from('baggage_items')
+        .insert({
+          unload_id: unloadId,
+          user_id: user.id,
+          title: newThoughtTitle.trim(),
+          category: config.category,
+          urgency: config.urgency,
+          action_step: 'Packed directly from My Bag',
+          status: 'pending',
+        })
+        .select('*')
+        .single();
+
+      if (insertErr) throw insertErr;
+
+      if (inserted) {
+        setItems((prev) => [mapDBToBagItem(inserted), ...prev]);
+      }
+
+      setNewThoughtTitle('');
+      setIsAddModalOpen(false);
+    } catch (err: any) {
+      console.error('Failed to save item:', err);
+      alert(err.message || 'Failed to add item to bag');
+    }
   };
 
   // Filter items
@@ -222,7 +318,7 @@ export default function MyBag() {
 
   const activeCount = items.filter((i) => !i.completed).length;
   const totalCount = items.length;
-  const capacityPercent = Math.min(Math.round((activeCount / Math.max(totalCount, 1)) * 100), 100);
+  const capacityPercent = totalCount > 0 ? Math.min(Math.round((activeCount / totalCount) * 100), 100) : 0;
 
   // Compute ring styling for Box Breathing
   const ringScaleClass =
@@ -279,383 +375,440 @@ export default function MyBag() {
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter lg:gap-gutter-desktop items-start">
-          {/* Left Column: Backpack Graphic & Pax Companion */}
-          <div className="lg:col-span-5 flex flex-col gap-space-md">
-            {/* Backpack Volume Meter */}
-            <div className="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
-              <div className="flex items-center justify-between pb-space-sm">
-                <div className="flex items-center gap-space-xs">
-                  <span className="font-label-lg text-label-lg text-on-surface font-bold">
-                    Backpack Volume
-                  </span>
-                  <span className="material-symbols-outlined text-primary text-[18px]">tune</span>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-xs py-0.5 rounded-full font-bold">
-                  {activeCount} / {totalCount} Items
-                </span>
-              </div>
-              <div className="w-full bg-surface-container rounded-full h-3.5 p-0.5 relative overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-primary to-primary-container h-full rounded-full transition-all duration-500 relative"
-                  style={{ width: `${capacityPercent}%` }}
-                >
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                </div>
-              </div>
-              <div className="flex justify-between text-on-surface-variant font-label-sm text-label-sm mt-1">
-                <span>Room for quietness</span>
-                <span className="text-secondary font-semibold">Healthy load today</span>
-              </div>
+        {/* Loading & Error States */}
+        {isLoading && (
+          <div className="py-space-xl">
+            <LoadingState message="Loading your bag..." />
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-space-lg p-space-md rounded-xl bg-error-container text-on-error-container flex items-center justify-between">
+            <div className="flex items-center gap-space-sm">
+              <span className="material-symbols-outlined text-2xl">error</span>
+              <p className="text-body-md">{error}</p>
             </div>
+            <button
+              onClick={fetchBagItems}
+              className="px-space-md py-space-xs bg-error text-on-error rounded-full text-label-md font-bold cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-            {/* Visual Backpack & Pax Companion */}
-            <div className="relative bg-surface-container-low rounded-xl p-space-md lg:p-space-lg shadow-sm flex flex-col items-center">
-              {/* Pax Speech Bubble */}
-              <div className="w-full mb-space-sm relative">
-                <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex items-start gap-space-sm relative">
-                  <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-primary text-[22px]">pets</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-label-sm text-label-sm text-primary font-bold tracking-wide uppercase">
-                        Pax Companion
-                      </span>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">
-                        Just now
-                      </span>
-                    </div>
-                    <p className="font-body-sm text-body-sm text-on-surface mt-0.5 font-medium">
-                      "Your bag is already{' '}
-                      <span className="font-bold text-secondary">38% lighter</span> than yesterday!
-                      Looking good, friend."
-                    </p>
-                  </div>
-                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-surface-container-lowest rotate-45"></div>
-                </div>
-              </div>
-
-              {/* Interactive Visual Backpack Container */}
-              <div className="relative w-full max-w-[340px] aspect-[4/5] bg-surface-container rounded-3xl p-space-md flex flex-col justify-between shadow-inner overflow-hidden">
-                <div className="absolute inset-x-8 top-3 h-10 rounded-t-full bg-surface-dim opacity-70"></div>
-                <div className="absolute inset-x-12 top-2 h-7 rounded-t-full bg-surface-container-high opacity-90"></div>
-
-                <div className="relative z-10 flex justify-between items-center px-space-xs pt-1">
-                  <div className="flex gap-1.5 items-center">
-                    <span className="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center text-[12px] shadow-sm font-bold text-on-secondary-container">
-                      #1
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-tertiary-fixed flex items-center justify-center text-[12px] shadow-sm font-bold text-on-tertiary-fixed">
-                      ★
-                    </span>
-                  </div>
-                  <div className="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary-container"></span> Canvas
-                    Pro 24L
-                  </div>
-                </div>
-
-                {/* Pocket Slots */}
-                <div className="relative z-10 flex flex-col gap-2.5 my-auto w-full">
-                  {/* Top Flap Slot */}
-                  <div
-                    onClick={() => handleSlotClick('presentation')}
-                    className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-sm rounded-lg shadow-sm transition-all hover:scale-[1.02]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-space-xs">
-                        <span className="text-base">🎤</span>
-                        <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
-                            Top Flap Pouch
-                          </span>
-                          <span className="font-label-md text-label-md text-on-surface font-bold leading-tight">
-                            Presentation outline
-                          </span>
-                        </div>
-                      </div>
-                      <span className="w-2.5 h-2.5 rounded-full bg-error"></span>
-                    </div>
-                  </div>
-
-                  {/* Main Deep Pocket Slot */}
-                  <div
-                    onClick={() => handleSlotClick('algo')}
-                    className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-md rounded-xl shadow-sm transition-all hover:scale-[1.02] relative"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-space-xs">
-                        <span className="text-xl">📚</span>
-                        <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-primary font-bold">
-                            Main Deep Pocket
-                          </span>
-                          <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
-                            Algorithm assignment
-                          </span>
-                          <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                            Heavy mental load (Due Friday)
-                          </span>
-                        </div>
-                      </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
-                        High
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Grid Slots */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      onClick={() => handleSlotClick('chat')}
-                      className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-xs rounded-lg shadow-sm transition-all hover:scale-[1.02]"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">👥</span>
-                        <div className="flex flex-col truncate">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
-                            Side Mesh
-                          </span>
-                          <span className="font-label-md text-label-md text-on-surface truncate font-semibold">
-                            Group chat
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      onClick={() => handleSlotClick('walk')}
-                      className="group cursor-pointer bg-surface-container-lowest hover:bg-secondary-container/30 p-space-xs rounded-lg shadow-sm transition-all hover:scale-[1.02]"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">🪫</span>
-                        <div className="flex flex-col truncate">
-                          <span className="font-label-sm text-label-sm text-secondary truncate">
-                            Front Pouch
-                          </span>
-                          <span className="font-label-md text-label-md text-on-surface truncate font-semibold">
-                            Rest & hydrate
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Keychain Footer */}
-                <div className="relative z-10 w-full bg-surface-dim/40 rounded-lg p-space-xs flex justify-between items-center">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">
-                    Keychain: Pax Felt Charm
-                  </span>
-                  <span className="material-symbols-outlined text-primary text-[18px]">key</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-space-xs mt-space-sm text-on-surface-variant font-label-sm text-label-sm">
-                <span className="material-symbols-outlined text-[16px]">touch_app</span>
-                <span>Tap any pocket above to highlight its details below</span>
-              </div>
+        {!isLoading && !error && items.length === 0 && (
+          <div className="bg-surface-container-lowest rounded-2xl p-space-xl shadow-sm mb-space-xl text-center">
+            <EmptyState
+              title="Your bag is empty 🎒"
+              message="No thoughts or tasks packed yet. Go to Unpack to dump what's on your mind!"
+            />
+            <div className="mt-space-md">
+              <Link
+                to="/unpack"
+                className="inline-flex items-center gap-space-xs px-space-xl py-space-md rounded-full bg-primary text-on-primary font-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] transition-all cursor-pointer"
+              >
+                <span>Start Unpacking</span>
+                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+              </Link>
             </div>
           </div>
+        )}
 
-          {/* Right Column: Filter Tabs & Bag Item Cards */}
-          <div className="lg:col-span-7 flex flex-col gap-space-md">
-            {/* Navigation / Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-space-xs pb-1">
-              <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full shadow-inner overflow-x-auto max-w-full">
-                <button
-                  onClick={() => setActiveFilter('all')}
-                  className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
-                    activeFilter === 'all'
-                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  All ({items.length})
-                </button>
-                <button
-                  onClick={() => setActiveFilter('urgent')}
-                  className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
-                    activeFilter === 'urgent'
-                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  Urgent ({items.filter((i) => i.category.includes('urgent')).length})
-                </button>
-                <button
-                  onClick={() => setActiveFilter('academic')}
-                  className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
-                    activeFilter === 'academic'
-                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  Academic ({items.filter((i) => i.category.includes('academic')).length})
-                </button>
-                <button
-                  onClick={() => setActiveFilter('personal')}
-                  className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
-                    activeFilter === 'personal'
-                      ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  Personal ({items.filter((i) => i.category.includes('personal')).length})
-                </button>
+        {/* Main Grid */}
+        {!isLoading && !error && items.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter lg:gap-gutter-desktop items-start">
+            {/* Left Column: Backpack Graphic & Pax Companion */}
+            <div className="lg:col-span-5 flex flex-col gap-space-md">
+              {/* Backpack Volume Meter */}
+              <div className="relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+                <div className="flex items-center justify-between pb-space-sm">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="font-label-lg text-label-lg text-on-surface font-bold">
+                      Backpack Volume
+                    </span>
+                    <span className="material-symbols-outlined text-primary text-[18px]">tune</span>
+                  </div>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-xs py-0.5 rounded-full font-bold">
+                    {activeCount} / {totalCount} Items
+                  </span>
+                </div>
+                <div className="w-full bg-surface-container rounded-full h-3.5 p-0.5 relative overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-primary to-primary-container h-full rounded-full transition-all duration-500 relative"
+                    style={{ width: `${capacityPercent}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between text-on-surface-variant font-label-sm text-label-sm mt-1">
+                  <span>Room for quietness</span>
+                  <span className="text-secondary font-semibold">
+                    {capacityPercent < 50 ? 'Light load today' : 'Manageable load'}
+                  </span>
+                </div>
               </div>
 
-              <button className="flex items-center gap-1 font-label-md text-label-md text-primary hover:underline px-2 py-1 cursor-pointer">
-                <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-                <span>Unpacked History</span>
-              </button>
-            </div>
+              {/* Visual Backpack & Pax Companion */}
+              <div className="relative bg-surface-container-low rounded-xl p-space-md lg:p-space-lg shadow-sm flex flex-col items-center">
+                {/* Pax Speech Bubble */}
+                <div className="w-full mb-space-sm relative">
+                  <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex items-start gap-space-sm relative">
+                    <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-primary text-[22px]">pets</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-label-sm text-label-sm text-primary font-bold tracking-wide uppercase">
+                          Pax Companion
+                        </span>
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">
+                          Just now
+                        </span>
+                      </div>
+                      <p className="font-body-sm text-body-sm text-on-surface mt-0.5 font-medium">
+                        "You have{' '}
+                        <span className="font-bold text-secondary">{activeCount} item{activeCount > 1 ? 's' : ''}</span> in
+                        your bag today! Take it one step at a time."
+                      </p>
+                    </div>
+                    <div className="absolute -bottom-2 left-6 w-3 h-3 bg-surface-container-lowest rotate-45"></div>
+                  </div>
+                </div>
 
-            {/* Bag Cards List */}
-            <div className="flex flex-col gap-space-sm" id="bagItemsList">
-              {filteredItems.map((item) => {
-                const isHighlighted = highlightedCardId === item.id;
+                {/* Interactive Visual Backpack Container */}
+                <div className="relative w-full max-w-[340px] aspect-[4/5] bg-surface-container rounded-3xl p-space-md flex flex-col justify-between shadow-inner overflow-hidden">
+                  <div className="absolute inset-x-8 top-3 h-10 rounded-t-full bg-surface-dim opacity-70"></div>
+                  <div className="absolute inset-x-12 top-2 h-7 rounded-t-full bg-surface-container-high opacity-90"></div>
 
-                return (
-                  <div
-                    key={item.id}
-                    id={item.id}
-                    className={`bag-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all ${
-                      item.completed ? 'opacity-50' : ''
-                    } ${isHighlighted ? 'bg-primary-fixed/20 ring-2 ring-primary/40' : ''}`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-space-sm">
-                      <div className="flex items-start gap-space-sm">
-                        {/* Custom Checkbox Button */}
-                        <button
-                          onClick={() => toggleComplete(item.id)}
-                          className={`mt-1 w-6 h-6 rounded-lg border border-transparent flex items-center justify-center transition-all cursor-pointer ${
-                            item.completed
-                              ? 'bg-secondary text-on-secondary'
-                              : 'bg-surface-container hover:bg-secondary-container text-transparent'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[16px]">check</span>
-                        </button>
+                  <div className="relative z-10 flex justify-between items-center px-space-xs pt-1">
+                    <div className="flex gap-1.5 items-center">
+                      <span className="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center text-[12px] shadow-sm font-bold text-on-secondary-container">
+                        #{items.length}
+                      </span>
+                      <span className="w-6 h-6 rounded-full bg-tertiary-fixed flex items-center justify-center text-[12px] shadow-sm font-bold text-on-tertiary-fixed">
+                        ★
+                      </span>
+                    </div>
+                    <div className="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-secondary-container"></span> Canvas
+                      Pro 24L
+                    </div>
+                  </div>
 
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`font-headline-sm text-headline-sm text-on-surface ${
-                                item.completed ? 'line-through text-outline' : ''
-                              }`}
-                            >
-                              {item.titleEmoji} {item.title}
+                  {/* Pocket Slots */}
+                  <div className="relative z-10 flex flex-col gap-2.5 my-auto w-full">
+                    {/* Top Flap Slot */}
+                    <div
+                      onClick={() => handleSlotClick('presentation')}
+                      className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-sm rounded-lg shadow-sm transition-all hover:scale-[1.02]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-space-xs">
+                          <span className="text-base">🎤</span>
+                          <div className="flex flex-col">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                              Top Flap Pouch
                             </span>
-                            <span className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm ${item.badgeStyle}`}>
-                              {item.badgeText}
+                            <span className="font-label-md text-label-md text-on-surface font-bold leading-tight truncate max-w-[170px]">
+                              {items.find((i) => i.slotKey === 'presentation')?.title || 'Immediate Tasks'}
                             </span>
                           </div>
-                          <p className="font-body-md text-body-md text-on-surface-variant">
-                            {item.description}
-                          </p>
-                          <div className="flex items-center gap-space-xs pt-1">
-                            <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px]">backpack</span>
-                              {item.pocketName}
+                        </div>
+                        <span className="w-2.5 h-2.5 rounded-full bg-error"></span>
+                      </div>
+                    </div>
+
+                    {/* Main Deep Pocket Slot */}
+                    <div
+                      onClick={() => handleSlotClick('algo')}
+                      className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-md rounded-xl shadow-sm transition-all hover:scale-[1.02] relative"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-space-xs">
+                          <span className="text-xl">📚</span>
+                          <div className="flex flex-col">
+                            <span className="font-label-sm text-label-sm text-primary font-bold">
+                              Main Deep Pocket
                             </span>
-                            <span className="text-on-surface-variant text-xs">•</span>
-                            <span className={`font-label-sm text-label-sm ${item.weightColorClass}`}>
-                              {item.weightLabel}
+                            <span className="font-headline-sm text-headline-sm text-on-surface leading-tight truncate max-w-[180px]">
+                              {items.find((i) => i.slotKey === 'algo')?.title || 'Academic Tasks'}
+                            </span>
+                            <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                              Main mental load
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                          High
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Grid Slots */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div
+                        onClick={() => handleSlotClick('chat')}
+                        className="group cursor-pointer bg-surface-container-lowest hover:bg-primary-fixed/20 p-space-xs rounded-lg shadow-sm transition-all hover:scale-[1.02]"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">👥</span>
+                          <div className="flex flex-col truncate">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
+                              Side Mesh
+                            </span>
+                            <span className="font-label-md text-label-md text-on-surface truncate font-semibold">
+                              {items.find((i) => i.slotKey === 'chat')?.title || 'Social & Messages'}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
-                        {item.actionType === 'unpack' && (
+                      <div
+                        onClick={() => handleSlotClick('walk')}
+                        className="group cursor-pointer bg-surface-container-lowest hover:bg-secondary-container/30 p-space-xs rounded-lg shadow-sm transition-all hover:scale-[1.02]"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">🪫</span>
+                          <div className="flex flex-col truncate">
+                            <span className="font-label-sm text-label-sm text-secondary truncate">
+                              Front Pouch
+                            </span>
+                            <span className="font-label-md text-label-md text-on-surface truncate font-semibold">
+                              {items.find((i) => i.slotKey === 'walk')?.title || 'Self-Care'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Keychain Footer */}
+                  <div className="relative z-10 w-full bg-surface-dim/40 rounded-lg p-space-xs flex justify-between items-center">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      Keychain: Pax Felt Charm
+                    </span>
+                    <span className="material-symbols-outlined text-primary text-[18px]">key</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-space-xs mt-space-sm text-on-surface-variant font-label-sm text-label-sm">
+                  <span className="material-symbols-outlined text-[16px]">touch_app</span>
+                  <span>Tap any pocket above to highlight its details below</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Filter Tabs & Bag Item Cards */}
+            <div className="lg:col-span-7 flex flex-col gap-space-md">
+              {/* Navigation / Filters */}
+              <div className="flex flex-wrap items-center justify-between gap-space-xs pb-1">
+                <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full shadow-inner overflow-x-auto max-w-full">
+                  <button
+                    onClick={() => setActiveFilter('all')}
+                    className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
+                      activeFilter === 'all'
+                        ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    All ({items.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('urgent')}
+                    className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
+                      activeFilter === 'urgent'
+                        ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    Urgent ({items.filter((i) => i.category.includes('high') || i.category.includes('urgent')).length})
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('academic')}
+                    className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
+                      activeFilter === 'academic'
+                        ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    Academic ({items.filter((i) => i.category.includes('academic')).length})
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('personal')}
+                    className={`px-space-md py-1 rounded-full font-label-md text-label-md transition-all cursor-pointer ${
+                      activeFilter === 'personal'
+                        ? 'bg-surface-container-lowest text-on-surface shadow-sm font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    Personal ({items.filter((i) => i.category.includes('personal') || i.category.includes('social')).length})
+                  </button>
+                </div>
+
+                <button
+                  onClick={fetchBagItems}
+                  className="flex items-center gap-1 font-label-md text-label-md text-primary hover:underline px-2 py-1 cursor-pointer"
+                  title="Refresh items from database"
+                >
+                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              {/* Bag Cards List */}
+              <div className="flex flex-col gap-space-sm" id="bagItemsList">
+                {filteredItems.map((item) => {
+                  const isHighlighted = highlightedCardId === item.id;
+
+                  return (
+                    <div
+                      key={item.id}
+                      id={item.id}
+                      className={`bag-card bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all ${
+                        item.completed ? 'opacity-50' : ''
+                      } ${isHighlighted ? 'bg-primary-fixed/20 ring-2 ring-primary/40' : ''}`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-space-sm">
+                        <div className="flex items-start gap-space-sm">
+                          {/* Custom Checkbox Button */}
                           <button
                             onClick={() => toggleComplete(item.id)}
-                            className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_2px_0_#5516be] hover:translate-y-[1px] transition-all cursor-pointer"
+                            className={`mt-1 w-6 h-6 rounded-lg border border-transparent flex items-center justify-center transition-all cursor-pointer ${
+                              item.completed
+                                ? 'bg-secondary text-on-secondary'
+                                : 'bg-surface-container hover:bg-secondary-container text-transparent'
+                            }`}
                           >
-                            {item.actionLabel}
+                            <span className="material-symbols-outlined text-[16px]">check</span>
                           </button>
-                        )}
-                        {item.actionType === 'microstep' && (
-                          <button
-                            onClick={() => toggleMicrostepPanel(item.id)}
-                            className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all shadow-sm cursor-pointer"
-                          >
-                            {item.actionLabel}
-                          </button>
-                        )}
-                        {item.actionType === 'snooze' && (
-                          <button className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all shadow-sm cursor-pointer">
-                            {item.actionLabel}
-                          </button>
-                        )}
-                        {item.actionType === 'walk' && (
-                          <button className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-secondary text-on-secondary font-label-md text-label-md shadow-sm hover:opacity-90 transition-all cursor-pointer">
-                            {item.actionLabel}
-                          </button>
-                        )}
 
-                        {item.secondaryActionLabel && (
-                          <button className="text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm px-2 py-1 cursor-pointer">
-                            {item.secondaryActionLabel}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Collapsible Microsteps Panel */}
-                    {item.microsteps && item.showMicrosteps && (
-                      <div className="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg">
-                        <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
-                          Micro-Decompression
-                        </span>
-                        <div className="space-y-1 mt-1">
-                          {item.microsteps.map((ms) => (
-                            <label
-                              key={ms.id}
-                              className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={ms.completed}
-                                onChange={() => toggleMicrostepCheck(item.id, ms.id)}
-                                className="rounded accent-primary cursor-pointer"
-                              />
-                              <span className={ms.completed ? 'line-through text-on-surface-variant' : ''}>
-                                {ms.label}
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`font-headline-sm text-headline-sm text-on-surface ${
+                                  item.completed ? 'line-through text-outline' : ''
+                                }`}
+                              >
+                                {item.titleEmoji} {item.title}
                               </span>
-                            </label>
-                          ))}
+                              <span className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm ${item.badgeStyle}`}>
+                                {item.badgeText}
+                              </span>
+                            </div>
+                            <p className="font-body-md text-body-md text-on-surface-variant">
+                              {item.description}
+                            </p>
+                            <div className="flex items-center gap-space-xs pt-1">
+                              <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">backpack</span>
+                                {item.pocketName}
+                              </span>
+                              <span className="text-on-surface-variant text-xs">•</span>
+                              <span className={`font-label-sm text-label-sm ${item.weightColorClass}`}>
+                                {item.weightLabel}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
+                          {item.actionType === 'unpack' && (
+                            <button
+                              onClick={() => toggleComplete(item.id)}
+                              className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_2px_0_#5516be] hover:translate-y-[1px] transition-all cursor-pointer"
+                            >
+                              {item.completed ? 'Mark Pending' : item.actionLabel}
+                            </button>
+                          )}
+                          {item.actionType === 'microstep' && (
+                            <button
+                              onClick={() => toggleMicrostepPanel(item.id)}
+                              className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all shadow-sm cursor-pointer"
+                            >
+                              {item.actionLabel}
+                            </button>
+                          )}
+                          {item.actionType === 'snooze' && (
+                            <button
+                              onClick={() => toggleComplete(item.id)}
+                              className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all shadow-sm cursor-pointer"
+                            >
+                              {item.actionLabel}
+                            </button>
+                          )}
+                          {item.actionType === 'walk' && (
+                            <button
+                              onClick={() => toggleComplete(item.id)}
+                              className="w-full sm:w-auto px-space-md py-1.5 rounded-full bg-secondary text-on-secondary font-label-md text-label-md shadow-sm hover:opacity-90 transition-all cursor-pointer"
+                            >
+                              {item.actionLabel}
+                            </button>
+                          )}
+
+                          {item.secondaryActionLabel && (
+                            <button
+                              onClick={() => toggleComplete(item.id)}
+                              className="text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm px-2 py-1 cursor-pointer"
+                            >
+                              {item.completed ? 'Reopen' : item.secondaryActionLabel}
+                            </button>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Bag Insight Footer */}
-            <div className="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between shadow-sm mt-space-sm">
-              <div className="flex items-center gap-space-sm">
-                <div className="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-bold text-sm">
-                  ✨
-                </div>
-                <div>
-                  <p className="font-label-md text-label-md text-on-surface font-semibold">Bag Insight</p>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    You unpacked 3 mental weights yesterday. Your average Friday bag capacity is 78%.
-                  </p>
-                </div>
+                      {/* Collapsible Microsteps Panel */}
+                      {item.microsteps && item.showMicrosteps && (
+                        <div className="mt-space-md pt-space-sm bg-surface-container-low p-space-sm rounded-lg">
+                          <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
+                            Micro-Decompression
+                          </span>
+                          <div className="space-y-1 mt-1">
+                            {item.microsteps.map((ms) => (
+                              <label
+                                key={ms.id}
+                                className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={ms.completed}
+                                  onChange={() => toggleMicrostepCheck(item.id, ms.id)}
+                                  className="rounded accent-primary cursor-pointer"
+                                />
+                                <span className={ms.completed ? 'line-through text-on-surface-variant' : ''}>
+                                  {ms.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <a href="#" className="font-label-md text-label-md text-primary font-bold hover:underline shrink-0">
-                View stats
-              </a>
+
+              {/* Bag Insight Footer */}
+              <div className="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between shadow-sm mt-space-sm">
+                <div className="flex items-center gap-space-sm">
+                  <div className="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-bold text-sm">
+                    ✨
+                  </div>
+                  <div>
+                    <p className="font-label-md text-label-md text-on-surface font-semibold">Bag Insight</p>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      You have {totalCount - activeCount} completed items and {activeCount} active items in your bag.
+                    </p>
+                  </div>
+                </div>
+                <Link to="/progress" className="font-label-md text-label-md text-primary font-bold hover:underline shrink-0">
+                  View stats
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Pack New Thought Modal */}
@@ -770,4 +923,3 @@ export default function MyBag() {
     </div>
   );
 }
-
