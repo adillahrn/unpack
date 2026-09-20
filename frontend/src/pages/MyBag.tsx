@@ -30,6 +30,9 @@ interface Toast {
   undoId?: string;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const LOGO_SRC = '/unpack_logo.png';
+
 const CATEGORY_EMOJI: Record<string, string> = {
   academic: '📚',
   deadline: '🎤',
