@@ -30,7 +30,7 @@ interface Toast {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const LOGO_SRC = '/unpack-logo.png';
+const LOGO_SRC = '/unpack_logo.png';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   academic: '📚',
