@@ -50,17 +50,20 @@ const URGENCY_COLORS: Record<string, { bg: string; text: string; dot: string; ta
   },
 };
 
-const defaultText =
-  "Tomorrow I have a presentation and I haven't finished my slides. My algorithm assignment is also due soon, my group hasn't replied, and I have a meeting tonight. I'm really tired and I don't know where to even begin…";
-
 export default function Unpack() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const navigate = useNavigate();
-  const [text, setText] = useState(defaultText);
+
+  const defaultInputText = t(
+    'unpack.defaultInput',
+    "Tomorrow I have a presentation and I haven't finished my slides. My algorithm assignment is also due soon, my group hasn't replied, and I have a meeting tonight. I'm really tired and I don't know where to even begin…"
+  );
+
+  const [rawText, setRawText] = useState<string | null>(null);
+  const text = rawText ?? defaultInputText;
+
   const [weight, setWeight] = useState(3);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
-  const [isBreathing, setIsBreathing] = useState(false);
-  const [breatheLabel, setBreatheLabel] = useState('Breathe');
   const [unpackState, setUnpackState] = useState<UnpackState>(initialUnpackState);
   const [showChat, setShowChat] = useState(false);
 
@@ -70,7 +73,6 @@ export default function Unpack() {
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const charCount = text.length;
   const items = unpackState.data?.items ?? [];
 
   // When AI returns results, select all items by default
@@ -85,23 +87,12 @@ export default function Unpack() {
   }, [unpackState.data]);
 
   const handleClear = useCallback(() => {
-    setText('');
+    setRawText('');
     setUnpackState(initialUnpackState);
     setSelectedIndices([]);
     setSaveSuccessMessage(null);
     setSaveError(null);
   }, []);
-
-  const handleBreathe = useCallback(() => {
-    if (isBreathing) return;
-    setIsBreathing(true);
-    setBreatheLabel('Inhale...');
-    setTimeout(() => setBreatheLabel('Exhale...'), 3000);
-    setTimeout(() => {
-      setBreatheLabel('Calm 🌿');
-      setIsBreathing(false);
-    }, 6000);
-  }, [isBreathing]);
 
   const handleUnpack = useCallback(async () => {
     if (unpackState.isLoading) return;
@@ -111,7 +102,7 @@ export default function Unpack() {
     setSaveError(null);
 
     try {
-      const result = await unpackMindDump(text);
+      const result = await unpackMindDump(text, locale);
       setUnpackState({ isLoading: false, error: null, data: result });
     } catch (err) {
       console.error('handleUnpack caught error:', err);
@@ -154,7 +145,7 @@ export default function Unpack() {
       const selectedItems = selectedIndices
         .map((index) => items[index])
         .filter((item): item is BaggageItem => item !== undefined);
-        
+
       const insertRows = selectedItems.map((item) => ({
         unload_id: unpackState.data!.unloadId,
         user_id: user.id,
@@ -172,14 +163,18 @@ export default function Unpack() {
         throw dbError;
       }
 
-      setSaveSuccessMessage(`${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} saved to My Bag! 🎒`);
+      setSaveSuccessMessage(
+        locale === 'id'
+          ? `${selectedItems.length} item berhasil disimpan ke Tas Saya! 🎒`
+          : `${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} saved to My Bag! 🎒`
+      );
     } catch (err: any) {
       console.error('Save to bag failed:', err);
       setSaveError(err.message || 'Failed to save items to bag.');
     } finally {
       setIsSaving(false);
     }
-  }, [selectedIndices, items, unpackState.data, isSaving]);
+  }, [selectedIndices, items, unpackState.data, isSaving, locale]);
 
   const handleFilterClick = useCallback((category: FilterCategory) => {
     setActiveFilter(category);
@@ -197,7 +192,7 @@ export default function Unpack() {
   }, {});
 
   const filterTabs: { key: FilterCategory; label: string }[] = [
-    { key: 'all', label: `All (${items.length})` },
+    { key: 'all', label: `${t('mybag.filterAll', 'All')} (${items.length})` },
     ...Object.entries(categoryCounts).map(([cat, count]) => ({
       key: cat as FilterCategory,
       label: `${CATEGORY_EMOJI[cat] ?? '📌'} ${t(`unpack.category.${cat}`)} (${count})`,
@@ -214,9 +209,13 @@ export default function Unpack() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
           <div className="inline-flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full shadow-sm w-fit">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-label-md text-primary font-bold uppercase tracking-wider">Step 01 of 02</span>
+            <span className="text-label-md text-primary font-bold uppercase tracking-wider">
+              {t('unpack.stepBar', 'Step 01 of 02')}
+            </span>
             <span className="text-outline text-label-md">•</span>
-            <span className="text-label-md text-on-surface-variant">Brain Dump &amp; Sorting</span>
+            <span className="text-label-md text-on-surface-variant">
+              {t('unpack.stepTitle', 'Brain Dump & Sorting')}
+            </span>
           </div>
         </div>
 
@@ -224,10 +223,13 @@ export default function Unpack() {
         <div className="relative mb-space-xl">
           <div className="max-w-3xl">
             <h1 className="text-display-lg text-on-surface tracking-tight leading-tight mb-space-xs">
-              What's taking up space in your mind right now?
+              {t('unpack.mainHeading', "What's taking up space in your mind right now?")}
             </h1>
             <p className="text-body-lg text-on-surface-variant leading-relaxed">
-              Dump it all out. Don't worry about spelling, punctuation, or organizing it. Pax will sift through the noise and help sort the weight.
+              {t(
+                'unpack.mainSubheading',
+                "Dump it all out. Don't worry about spelling, punctuation, or organizing it. Pax will sift through the noise and help sort the weight."
+              )}
             </p>
           </div>
           <div className="hidden lg:block absolute -right-4 -top-3 w-28 h-6 bg-amber-100/70 rotate-3 rounded-sm shadow-sm pointer-events-none mix-blend-multiply opacity-80" />
@@ -244,7 +246,9 @@ export default function Unpack() {
               <div className="flex items-center justify-between border-b border-surface-variant/40 pb-space-xs mb-space-sm">
                 <div className="flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-[18px] text-tertiary">edit_note</span>
-                  <span className="text-label-md text-on-surface-variant">Looseleaf Thought Sheet</span>
+                  <span className="text-label-md text-on-surface-variant">
+                    {t('unpack.sheetTitle', 'Looseleaf Thought Sheet')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-space-sm">
                   <button
@@ -252,13 +256,15 @@ export default function Unpack() {
                     onClick={handleClear}
                     className="text-on-surface-variant hover:text-error transition-colors text-label-sm flex items-center gap-1 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[15px]">ink_eraser</span> Clear
+                    <span className="material-symbols-outlined text-[15px]">ink_eraser</span>{' '}
+                    {t('unpack.clear', 'Clear')}
                   </button>
                   <button
                     type="button"
                     className="text-primary hover:text-on-primary-fixed-variant transition-colors text-label-sm flex items-center gap-1 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[15px]">mic</span> Voice Dump
+                    <span className="material-symbols-outlined text-[15px]">mic</span>{' '}
+                    {t('unpack.voiceDump', 'Voice Dump')}
                   </button>
                 </div>
               </div>
@@ -266,10 +272,13 @@ export default function Unpack() {
               <div className="relative w-full">
                 <textarea
                   className="w-full bg-transparent text-body-lg text-on-surface placeholder:text-outline/70 focus:outline-none resize-y leading-[32px] tracking-normal border-none"
-                  placeholder="Dump everything here... exams, late laundry, messy texts, unread emails..."
+                  placeholder={t(
+                    'unpack.placeholder',
+                    'Dump everything here... exams, late laundry, messy texts, unread emails...'
+                  )}
                   rows={6}
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => setRawText(e.target.value)}
                   disabled={unpackState.isLoading}
                   style={{
                     backgroundImage:
@@ -292,7 +301,9 @@ export default function Unpack() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-space-xs sm:gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full">
                   <div className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-tertiary text-[18px]">backpack</span>
-                    <span className="text-label-sm uppercase font-bold text-on-surface-variant">Mental Weight:</span>
+                    <span className="text-label-sm uppercase font-bold text-on-surface-variant">
+                      {t('unpack.mentalWeight', 'Mental Weight:')}
+                    </span>
                   </div>
                   <div className="flex items-center gap-space-xs">
                     <input
@@ -327,7 +338,9 @@ export default function Unpack() {
                   ) : (
                     <>
                       <span>{t('unpack.button.idle')}</span>
-                      <span className="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform">auto_awesome</span>
+                      <span className="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform">
+                        auto_awesome
+                      </span>
                     </>
                   )}
                 </button>
@@ -356,20 +369,24 @@ export default function Unpack() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-label-sm font-bold text-primary uppercase tracking-wider">PAX • Your Companion</span>
+                  <span className="text-label-sm font-bold text-primary uppercase tracking-wider">
+                    {t('unpack.paxCardTitle', 'PAX • Your Companion')}
+                  </span>
                 </div>
               </div>
 
               <p className="text-body-md text-on-surface leading-relaxed mb-space-lg">
-                I'm here to listen, no judgement.
+                {t('unpack.paxCardDesc', "I'm here to listen, no judgement.")}
               </p>
 
               <button
                 type="button"
                 className="w-full inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] group-hover:translate-y-[1px] group-hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
               >
-                <span>Talk to PAX</span>
-                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                <span>{t('unpack.paxCardBtn', 'Talk to PAX')}</span>
+                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
+                  arrow_forward
+                </span>
               </button>
             </div>
           </div>
@@ -388,7 +405,9 @@ export default function Unpack() {
                   <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-label-sm font-bold uppercase tracking-wider">
                     {t('unpack.results.sorted')}
                   </span>
-                  <span className="text-label-sm text-on-surface-variant">• {items.length} {t('unpack.results.subtitle')}</span>
+                  <span className="text-label-sm text-on-surface-variant">
+                    • {items.length} {t('unpack.results.subtitle')}
+                  </span>
                 </div>
                 <h2 className="text-headline-lg text-on-surface tracking-tight">
                   {t('unpack.results.title')}
@@ -402,11 +421,14 @@ export default function Unpack() {
                   onClick={handleToggleSelectAll}
                   className="text-label-md font-bold text-primary hover:underline cursor-pointer"
                 >
-                  {selectedIndices.length === items.length ? 'Deselect All' : 'Select All'}
+                  {selectedIndices.length === items.length
+                    ? t('unpack.deselectAll', 'Deselect All')
+                    : t('unpack.selectAll', 'Select All')}
                 </button>
                 <span className="text-outline">•</span>
                 <span className="text-body-sm text-on-surface-variant">
-                  <strong className="text-on-surface">{selectedIndices.length}</strong> of {items.length} selected
+                  <strong className="text-on-surface">{selectedIndices.length}</strong> of {items.length}{' '}
+                  {t('unpack.selectedCount', 'selected')}
                 </span>
               </div>
             </div>
@@ -453,11 +475,13 @@ export default function Unpack() {
                   <span className="material-symbols-outlined text-[24px]">backpack</span>
                 </div>
                 <div>
-                  <h3 className="text-headline-sm text-on-surface font-bold">Select items to put in your Bag</h3>
+                  <h3 className="text-headline-sm text-on-surface font-bold">
+                    {t('unpack.saveSectionTitle', 'Select items to put in your Bag')}
+                  </h3>
                   <p className="text-body-sm text-on-surface-variant">
                     {selectedIndices.length === 0
-                      ? 'Check the items above that you want to carry today.'
-                      : `Ready to save ${selectedIndices.length} selected item${selectedIndices.length > 1 ? 's' : ''} to My Bag.`}
+                      ? t('unpack.saveSectionDesc0', 'Check the items above that you want to carry today.')
+                      : t('unpack.saveSectionDescN', 'Ready to save selected items to My Bag.')}
                   </p>
                 </div>
               </div>
@@ -471,13 +495,15 @@ export default function Unpack() {
                 >
                   {isSaving ? (
                     <>
-                      <span>Saving to Bag…</span>
+                      <span>{t('unpack.saving', 'Saving to Bag…')}</span>
                       <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                     </>
                   ) : (
                     <>
                       <span className="material-symbols-outlined text-[20px]">add_task</span>
-                      <span>Save ({selectedIndices.length}) to My Bag 🎒</span>
+                      <span>
+                        {t('unpack.saveToBag', 'Save to My Bag 🎒')} ({selectedIndices.length})
+                      </span>
                     </>
                   )}
                 </button>
@@ -491,7 +517,6 @@ export default function Unpack() {
                   <span className="material-symbols-outlined text-secondary text-2xl">check_circle</span>
                   <div>
                     <h4 className="font-headline-sm text-headline-sm font-bold">{saveSuccessMessage}</h4>
-                    <p className="text-body-sm text-on-secondary-container/80">Items are now stored in your bag visualizer.</p>
                   </div>
                 </div>
                 <button
@@ -499,7 +524,7 @@ export default function Unpack() {
                   onClick={() => navigate('/my-bag')}
                   className="px-space-md py-space-xs rounded-full bg-secondary text-on-secondary text-label-md font-bold hover:opacity-90 transition-all cursor-pointer whitespace-nowrap"
                 >
-                  Open My Bag →
+                  {t('unpack.openMyBag', 'Open My Bag →')}
                 </button>
               </div>
             )}
@@ -519,7 +544,9 @@ export default function Unpack() {
           <div className="w-full mt-space-xl pt-space-lg border-t border-surface-variant/40">
             <div className="flex flex-col items-center justify-center py-space-xl gap-space-md">
               <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center animate-pulse">
-                <span className="material-symbols-outlined text-primary text-[32px] animate-spin">progress_activity</span>
+                <span className="material-symbols-outlined text-primary text-[32px] animate-spin">
+                  progress_activity
+                </span>
               </div>
               <p className="text-body-lg text-on-surface-variant">{t('unpack.loading')}</p>
             </div>
@@ -533,10 +560,17 @@ export default function Unpack() {
               2
             </div>
             <div>
-              <span className="text-label-sm uppercase tracking-wider text-primary font-bold">Next Phase</span>
-              <h3 className="text-headline-md text-on-surface">Feeling ready for one small step?</h3>
+              <span className="text-label-sm uppercase tracking-wider text-primary font-bold">
+                {t('unpack.nextPhaseLabel', 'Next Phase')}
+              </span>
+              <h3 className="text-headline-md text-on-surface">
+                {t('unpack.nextPhaseTitle', 'Feeling ready for one small step?')}
+              </h3>
               <p className="text-body-sm text-on-surface-variant">
-                We'll take just the single top priority card for a frictionless 10-minute start.
+                {t(
+                  'unpack.nextPhaseDesc',
+                  "We'll take just the single top priority card for a frictionless 10-minute start."
+                )}
               </p>
             </div>
           </div>
@@ -544,7 +578,7 @@ export default function Unpack() {
             to="/unwind#small-action-section"
             className="inline-flex items-center justify-center gap-space-sm px-space-xl py-space-md rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
           >
-            <span>Proceed to Small Action</span>
+            <span>{t('unpack.btnNextPhase', 'Proceed to Small Action')}</span>
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </Link>
         </div>
@@ -561,7 +595,7 @@ function BaggageCard({
   onToggle,
 }: {
   item: BaggageItem;
-  t: (key: string) => string;
+  t: (key: string, fallback?: string) => string;
   isSelected: boolean;
   onToggle: () => void;
 }) {
@@ -588,7 +622,7 @@ function BaggageCard({
             className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-            {t(`unpack.urgency.${item.urgency}`)}
+            {t(`unpack.urgency.${item.urgency}`, item.urgency)}
           </span>
 
           {/* Selection Checkbox */}
@@ -603,19 +637,15 @@ function BaggageCard({
                 : 'bg-surface-container border border-outline-variant text-transparent'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px] font-bold">
-              check
-            </span>
+            <span className="material-symbols-outlined text-[16px] font-bold">check</span>
           </div>
         </div>
 
-        <h3 className="text-headline-sm text-on-surface mb-1">
-          {item.title}
-        </h3>
+        <h3 className="text-headline-sm text-on-surface mb-1">{item.title}</h3>
 
         <p className="text-label-md text-on-surface-variant mb-space-md flex items-center gap-1">
           <span>
-            {emoji} {t(`unpack.category.${item.category}`)}
+            {emoji} {t(`unpack.category.${item.category}`, item.category)}
           </span>
         </p>
       </div>
@@ -628,10 +658,7 @@ function BaggageCard({
           </span>
 
           <p className="text-body-sm text-on-surface leading-tight">
-            <strong className="text-tertiary">
-              {t('unpack.results.paxNote')}
-            </strong>{' '}
-            "{item.actionStep}"
+            <strong className="text-tertiary">{t('unpack.results.paxNote', 'Pax note:')}</strong> "{item.actionStep}"
           </p>
         </div>
       </div>

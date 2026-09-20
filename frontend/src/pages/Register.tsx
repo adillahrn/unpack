@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from '@/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 function GoogleIcon() {
   return (
@@ -15,6 +17,7 @@ function GoogleIcon() {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,17 +32,17 @@ export default function Register() {
     setSuccess(null);
 
     if (!name.trim()) {
-      setError('Nama lengkap wajib diisi.');
+      setError(t('auth.errorRequired', 'Nama lengkap wajib diisi.'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Password dan konfirmasi password tidak cocok.');
+      setError(t('auth.errorMismatch', 'Password dan konfirmasi password tidak cocok.'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password minimal 6 karakter.');
+      setError(t('auth.errorMinLength', 'Password minimal 6 karakter.'));
       return;
     }
 
@@ -65,7 +68,7 @@ export default function Register() {
       return;
     }
 
-    setSuccess('Pendaftaran berhasil! Cek email kamu untuk verifikasi sebelum login.');
+    setSuccess(t('auth.regSuccessMsg', 'Pendaftaran berhasil! Cek email kamu untuk verifikasi sebelum login.'));
   };
 
   const handleGoogleLogin = async () => {
@@ -80,7 +83,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-margin relative overflow-hidden">
+    <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-margin relative overflow-hidden py-10">
+      {/* Top right language switcher */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* Ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary-fixed/30 rounded-full blur-3xl pointer-events-none" />
 
@@ -100,10 +108,10 @@ export default function Register() {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 bg-primary-fixed/60 -rotate-1 rounded-sm shadow-sm pointer-events-none" />
 
         <h2 className="text-headline-md text-on-surface mb-space-xs text-center">
-          Create account
+          {t('auth.createAccount', 'Create New Account')}
         </h2>
         <p className="text-body-sm text-on-surface-variant text-center mb-space-lg">
-          Join UNPACK and start unpacking your mind
+          {t('auth.createAccountSub', 'Start unpacking your mind today')}
         </p>
 
         {error && (
@@ -123,7 +131,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-space-md">
           <div>
             <label htmlFor="name" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Full Name
+              {t('auth.fullName', 'Full Name')}
             </label>
             <input
               id="name"
@@ -131,14 +139,14 @@ export default function Register() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="Nama lengkap kamu"
+              placeholder="John Doe"
               required
             />
           </div>
 
           <div>
             <label htmlFor="email" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Email
+              {t('auth.email', 'Email')}
             </label>
             <input
               id="email"
@@ -146,14 +154,14 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="nama@email.com"
+              placeholder="you@university.edu"
               required
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Password
+              {t('auth.password', 'Password')}
             </label>
             <input
               id="password"
@@ -161,14 +169,14 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="Minimal 6 karakter"
+              placeholder="••••••••"
               required
             />
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Confirm Password
+              {t('auth.confirmPassword', 'Confirm Password')}
             </label>
             <input
               id="confirmPassword"
@@ -176,7 +184,7 @@ export default function Register() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full rounded-xl bg-surface-container-low px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              placeholder="Ulangi password"
+              placeholder="••••••••"
               required
             />
           </div>
@@ -189,11 +197,11 @@ export default function Register() {
             {loading ? (
               <>
                 <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                <span>Membuat akun…</span>
+                <span>{t('auth.signingUp', 'Registering…')}</span>
               </>
             ) : (
               <>
-                <span>Sign Up</span>
+                <span>{t('auth.signUp', 'Sign Up')}</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </>
             )}
@@ -202,7 +210,7 @@ export default function Register() {
 
         <div className="flex items-center gap-space-sm my-space-lg">
           <div className="h-px bg-outline-variant flex-1" />
-          <span className="text-body-sm text-on-surface-variant">atau</span>
+          <span className="text-body-sm text-on-surface-variant">{t('auth.or', 'or')}</span>
           <div className="h-px bg-outline-variant flex-1" />
         </div>
 
@@ -213,13 +221,13 @@ export default function Register() {
           className="w-full inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full border border-outline-variant hover:bg-surface-container-low text-on-surface font-label-lg text-label-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <GoogleIcon />
-          <span>Continue with Google</span>
+          <span>{t('auth.continueGoogle', 'Continue with Google')}</span>
         </button>
 
         <p className="text-center text-body-sm text-on-surface-variant mt-space-lg">
-          Sudah punya akun?{' '}
+          {t('auth.hasAccount', 'Already have an account?')}{' '}
           <Link to="/login" className="text-primary font-semibold hover:underline">
-            Sign In
+            {t('auth.signIn', 'Sign In')}
           </Link>
         </p>
       </div>
