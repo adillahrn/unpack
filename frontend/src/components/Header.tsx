@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-
-const navItems = [
-  { path: '/', label: 'Home' },
-  { path: '/unpack', label: 'Unpack' },
-  { path: '/unwind', label: 'Unwind' },
-  { path: '/my-bag', label: 'My Bag' },
-];
+import { useTranslation } from '@/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { path: '/', label: t('nav.home', 'Home') },
+    { path: '/unpack', label: t('nav.unpack', 'Unpack') },
+    { path: '/unwind', label: t('nav.unwind', 'Unwind') },
+    { path: '/my-bag', label: t('nav.myBag', 'My Bag') },
+  ];
 
   const [isDark, setIsDark] = useState(false);
 
@@ -78,12 +81,14 @@ export default function Header() {
             })}
           </nav>
 
-          <div className="flex items-center gap-space-md">
+          <div className="flex items-center gap-space-sm sm:gap-space-md">
+            <LanguageSwitcher />
+
             <button
               onClick={toggleTheme}
               className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-on-surface-variant"
-              aria-label="Toggle dark mode"
-              title="Toggle dark mode"
+              aria-label={t('header.themeToggle', 'Toggle dark mode')}
+              title={t('header.themeToggle', 'Toggle dark mode')}
             >
               <span className="material-symbols-outlined text-[20px]">
                 {isDark ? 'light_mode' : 'dark_mode'}
@@ -94,19 +99,19 @@ export default function Header() {
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer group"
-                title={`Logout (${session.user?.email ?? ''})`}
+                title={`${t('header.logout', 'Logout')} (${session.user?.email ?? ''})`}
               >
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
                   logout
                 </span>
-                <span>Logout</span>
+                <span className="hidden sm:inline">{t('header.logout', 'Logout')}</span>
               </button>
             ) : (
               <Link
                 to="/login"
                 className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
-                aria-label="Login"
-                title="Login"
+                aria-label={t('nav.login', 'Login')}
+                title={t('nav.login', 'Login')}
               >
                 <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
               </Link>

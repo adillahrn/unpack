@@ -74,12 +74,13 @@ function isRateLimitError(error: unknown): boolean {
 export async function sendChatMessage(
   message: string,
   history: { role: 'user' | 'model'; text: string }[],
+  locale: string = 'en',
 ): Promise<ChatResponse> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const { data, error } = await supabase.functions.invoke('pax-chat', {
-      body: { message: message.trim(), history },
+      body: { message: message.trim(), history, locale },
     });
 
     if (error) {

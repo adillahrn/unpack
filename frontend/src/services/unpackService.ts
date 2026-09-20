@@ -28,7 +28,7 @@ export const initialUnpackState: UnpackState = {
  * Calls the "unpack" edge function to process a mind dump.
  * Creates an unload record first, then invokes the AI function.
  */
-export async function unpackMindDump(rawText: string): Promise<UnpackResult> {
+export async function unpackMindDump(rawText: string, locale: string = 'en'): Promise<UnpackResult> {
   // Validate input
   const trimmed = rawText.trim();
   if (!trimmed) {
@@ -56,7 +56,7 @@ export async function unpackMindDump(rawText: string): Promise<UnpackResult> {
 
   // Call the edge function
   const { data, error } = await supabase.functions.invoke('unpack', {
-    body: { raw_text: trimmed, unload_id: unload.id },
+    body: { raw_text: trimmed, unload_id: unload.id, locale },
   });
 
   if (error) {

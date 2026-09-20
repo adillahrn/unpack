@@ -6,54 +6,80 @@ import {
   scanForDistress,
   createMessageId,
 } from '@/services/chatService';
+import { useTranslation } from '@/i18n';
 
 /* ── Mood config ─────────────────────────────────────────────── */
 
-const MOOD_META: Record<string, { emoji: string; label: string; color: string }> = {
-  happy: { emoji: '☀️', label: 'You seem cheerful today!', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  sad: { emoji: '🌧️', label: 'You seem a little down today.', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
-  anxious: { emoji: '🌪️', label: 'You seem a little anxious today.', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200' },
-  calm: { emoji: '🌿', label: 'You seem calm and collected.', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  energized: { emoji: '⚡', label: 'You seem full of energy!', color: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200' },
+const MOOD_META: Record<string, { emoji: string; labelId: string; labelEn: string; color: string }> = {
+  happy: {
+    emoji: '☀️',
+    labelId: 'Kamu terlihat ceria hari ini!',
+    labelEn: 'You seem cheerful today!',
+    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+  },
+  sad: {
+    emoji: '🌧️',
+    labelId: 'Kamu tampaknya agak sedih hari ini.',
+    labelEn: 'You seem a little down today.',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
+  },
+  anxious: {
+    emoji: '🌪️',
+    labelId: 'Kamu terlihat sedikit cemas hari ini.',
+    labelEn: 'You seem a little anxious today.',
+    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
+  },
+  calm: {
+    emoji: '🌿',
+    labelId: 'Kamu terlihat tenang dan fokus.',
+    labelEn: 'You seem calm and collected.',
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+  },
+  energized: {
+    emoji: '⚡',
+    labelId: 'Kamu terlihat penuh energi!',
+    labelEn: 'You seem full of energy!',
+    color: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200',
+  },
 };
 
-const MOOD_RECOMMENDATIONS: Record<string, { emoji: string; text: string; link?: string }[]> = {
+const MOOD_RECOMMENDATIONS: Record<string, { emoji: string; textId: string; textEn: string; link?: string }[]> = {
   anxious: [
-    { emoji: '🌿', text: '1-minute breathing exercise' },
-    { emoji: '🎵', text: 'Calm playlist', link: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u' },
-    { emoji: '📝', text: 'Write down what\'s worrying you' },
+    { emoji: '🌿', textId: 'Latihan napas 1 menit', textEn: '1-minute breathing exercise' },
+    { emoji: '🎵', textId: 'Playlist musik tenang', textEn: 'Calm playlist', link: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u' },
+    { emoji: '📝', textId: 'Tuliskan hal yang mengganggumu', textEn: "Write down what's worrying you" },
   ],
   sad: [
-    { emoji: '🌿', text: '1-minute breathing exercise' },
-    { emoji: '🎵', text: 'Feel-good playlist', link: 'https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC' },
-    { emoji: '☕', text: 'Make yourself a warm drink' },
+    { emoji: '🌿', textId: 'Latihan napas 1 menit', textEn: '1-minute breathing exercise' },
+    { emoji: '🎵', textId: 'Playlist penaik suasana hati', textEn: 'Feel-good playlist', link: 'https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC' },
+    { emoji: '☕', textId: 'Buatkan dirimu minuman hangat', textEn: 'Make yourself a warm drink' },
   ],
 };
 
-const PAX_GREETING: ChatMessage = {
-  id: 'greeting',
-  role: 'model',
-  text: "Hey, I'm here. What's on your mind?",
-  timestamp: Date.now(),
-};
-
-const QUICK_PROMPTS = [
-  { emoji: '🔥', text: 'Tips agar tidak burnout' },
-  { emoji: '🎯', text: 'Rekomendasikan kegiatan yang menyenangkan' },
-  { emoji: '😴', text: 'Aku susah tidur akhir-akhir ini' },
-  { emoji: '💪', text: 'Cara menjaga semangat belajar' },
-  { emoji: '🧘', text: 'Bantu aku tenangkan pikiran' },
-  { emoji: '💚', text: 'Aku butuh dukungan mental health' },
+const QUICK_PROMPTS_DATA = [
+  { emoji: '🔥', textId: 'Tips agar tidak burnout', textEn: 'Tips to avoid burnout' },
+  { emoji: '🎯', textId: 'Rekomendasikan kegiatan menyenangkan', textEn: 'Recommend fun calming activities' },
+  { emoji: '😴', textId: 'Aku susah tidur akhir-akhir ini', textEn: "I've been having trouble sleeping lately" },
+  { emoji: '💪', textId: 'Cara menjaga semangat belajar', textEn: 'How to stay motivated to study' },
+  { emoji: '🧘', textId: 'Bantu aku tenangkan pikiran', textEn: 'Help me calm my thoughts' },
+  { emoji: '💚', textId: 'Aku butuh dukungan kesehatan mental', textEn: 'I need mental health support' },
 ];
-
-/* ── Component ───────────────────────────────────────────────── */
 
 interface PaxChatProps {
   onClose: () => void;
 }
 
 export default function PaxChat({ onClose }: PaxChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([PAX_GREETING]);
+  const { t, locale } = useTranslation();
+
+  const getGreeting = useCallback((): ChatMessage => ({
+    id: 'greeting',
+    role: 'model',
+    text: locale === 'id' ? 'Halo, Pax di sini. Ada yang ingin kamu ceritakan?' : "Hey, I'm here. What's on your mind?",
+    timestamp: Date.now(),
+  }), [locale]);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [getGreeting()]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentMood, setCurrentMood] = useState<MoodResult | null>(null);
@@ -84,12 +110,12 @@ export default function PaxChat({ onClose }: PaxChatProps) {
   }, [showMenu]);
 
   const handleNewChat = useCallback(() => {
-    setMessages([{ ...PAX_GREETING, id: createMessageId(), timestamp: Date.now() }]);
+    setMessages([{ ...getGreeting(), id: createMessageId(), timestamp: Date.now() }]);
     setCurrentMood(null);
     setShowDistressCard(false);
     setError(null);
     setShowMenu(false);
-  }, []);
+  }, [getGreeting]);
 
   const handleClearConversation = useCallback(() => {
     setMessages([]);
@@ -105,7 +131,6 @@ export default function PaxChat({ onClose }: PaxChatProps) {
 
     setError(null);
 
-    // Add user message
     const userMsg: ChatMessage = {
       id: createMessageId(),
       role: 'user',
@@ -115,12 +140,10 @@ export default function PaxChat({ onClose }: PaxChatProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
 
-    // Client-side distress scan (immediate)
     if (scanForDistress(trimmed)) {
       setShowDistressCard(true);
     }
 
-    // Build history for API (exclude greeting if it's the default)
     const history = messages
       .filter((m) => m.id !== 'greeting')
       .map((m) => ({ role: m.role, text: m.text }));
@@ -128,7 +151,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
     setIsTyping(true);
 
     try {
-      const response = await sendChatMessage(trimmed, history);
+      const response = await sendChatMessage(trimmed, history, locale);
 
       const paxMsg: ChatMessage = {
         id: createMessageId(),
@@ -139,61 +162,62 @@ export default function PaxChat({ onClose }: PaxChatProps) {
       setMessages((prev) => [...prev, paxMsg]);
       setCurrentMood(response.mood);
 
-      // API-level distress detection
       if (response.distress) {
         setShowDistressCard(true);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
+      setError(err instanceof Error ? err.message : t('unpack.error.unknown', 'Terjadi kesalahan.'));
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, messages]);
+  }, [input, isTyping, messages, t]);
 
-  const handleQuickPrompt = useCallback((promptText: string) => {
-    if (isTyping) return;
-    // Use a microtask to ensure state is set before triggering send
-    setTimeout(() => {
-      setInput('');
-      const userMsg: ChatMessage = {
-        id: createMessageId(),
-        role: 'user',
-        text: promptText,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      setError(null);
+  const handleQuickPrompt = useCallback(
+    (promptText: string) => {
+      if (isTyping) return;
+      setTimeout(() => {
+        setInput('');
+        const userMsg: ChatMessage = {
+          id: createMessageId(),
+          role: 'user',
+          text: promptText,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, userMsg]);
+        setError(null);
 
-      if (scanForDistress(promptText)) {
-        setShowDistressCard(true);
-      }
+        if (scanForDistress(promptText)) {
+          setShowDistressCard(true);
+        }
 
-      const history = messages
-        .filter((m) => m.id !== 'greeting')
-        .map((m) => ({ role: m.role, text: m.text }));
+        const history = messages
+          .filter((m) => m.id !== 'greeting')
+          .map((m) => ({ role: m.role, text: m.text }));
 
-      setIsTyping(true);
+        setIsTyping(true);
 
-      sendChatMessage(promptText, history)
-        .then((response) => {
-          const paxMsg: ChatMessage = {
-            id: createMessageId(),
-            role: 'model',
-            text: response.reply,
-            timestamp: Date.now(),
-          };
-          setMessages((prev) => [...prev, paxMsg]);
-          setCurrentMood(response.mood);
-          if (response.distress) setShowDistressCard(true);
-        })
-        .catch((err) => {
-          setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
-        })
-        .finally(() => {
-          setIsTyping(false);
-        });
-    }, 0);
-  }, [isTyping, messages]);
+        sendChatMessage(promptText, history, locale)
+          .then((response) => {
+            const paxMsg: ChatMessage = {
+              id: createMessageId(),
+              role: 'model',
+              text: response.reply,
+              timestamp: Date.now(),
+            };
+            setMessages((prev) => [...prev, paxMsg]);
+            setCurrentMood(response.mood);
+            if (response.distress) setShowDistressCard(true);
+          })
+          .catch((err) => {
+            setError(err instanceof Error ? err.message : t('unpack.error.unknown', 'Terjadi kesalahan.'));
+          })
+          .finally(() => {
+            setIsTyping(false);
+          });
+      }, 0);
+    },
+    [isTyping, messages, t]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -203,6 +227,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
   };
 
   const moodMeta = currentMood ? MOOD_META[currentMood.label] : null;
+  const moodLabel = moodMeta ? (locale === 'id' ? moodMeta.labelId : moodMeta.labelEn) : null;
   const recommendations = currentMood ? MOOD_RECOMMENDATIONS[currentMood.label] : null;
 
   return (
@@ -212,8 +237,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
 
       {/* Chat container */}
       <div className="relative z-10 flex flex-col w-full max-w-lg mx-auto h-full sm:h-[calc(100vh-2rem)] sm:my-4 bg-surface rounded-none sm:rounded-2xl shadow-2xl overflow-hidden">
-
-        {/* ── Header ────────────────────────────────── */}
+        {/* Header */}
         <div className="flex items-center justify-between px-space-lg py-space-md bg-surface-container-low border-b border-outline-variant/30 shrink-0">
           <div className="flex items-center gap-space-sm">
             <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
@@ -221,7 +245,9 @@ export default function PaxChat({ onClose }: PaxChatProps) {
             </div>
             <div>
               <h2 className="text-label-lg text-on-surface font-bold leading-tight">PAX</h2>
-              <p className="text-label-sm text-on-surface-variant">Your space to unpack</p>
+              <p className="text-label-sm text-on-surface-variant">
+                {locale === 'id' ? 'Ruang amanmu untuk bercerita' : 'Your space to unpack'}
+              </p>
             </div>
           </div>
 
@@ -230,7 +256,10 @@ export default function PaxChat({ onClose }: PaxChatProps) {
             <div className="relative">
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
                 className="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Menu"
               >
@@ -245,7 +274,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
                     className="w-full flex items-center gap-space-sm px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">add</span>
-                    New chat
+                    {locale === 'id' ? 'Percakapan baru' : 'New chat'}
                   </button>
                   <button
                     type="button"
@@ -253,7 +282,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
                     className="w-full flex items-center gap-space-sm px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
-                    Clear conversation
+                    {locale === 'id' ? 'Hapus riwayat chat' : 'Clear conversation'}
                   </button>
                 </div>
               )}
@@ -271,17 +300,16 @@ export default function PaxChat({ onClose }: PaxChatProps) {
           </div>
         </div>
 
-        {/* ── Mood indicator ────────────────────────── */}
-        {moodMeta && (
+        {/* Mood indicator */}
+        {moodMeta && moodLabel && (
           <div className={`flex items-center gap-space-xs px-space-lg py-space-xs ${moodMeta.color} transition-all duration-500 shrink-0`}>
             <span className="text-[16px]">{moodMeta.emoji}</span>
-            <span className="text-label-sm font-medium">{moodMeta.label}</span>
+            <span className="text-label-sm font-medium">{moodLabel}</span>
           </div>
         )}
 
-        {/* ── Messages ──────────────────────────────── */}
+        {/* Messages */}
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-space-md py-space-md space-y-space-md">
-
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'model' && (
@@ -306,45 +334,53 @@ export default function PaxChat({ onClose }: PaxChatProps) {
             <div className="flex justify-start">
               <div className="w-7 shrink-0 mr-space-xs" />
               <div className="flex flex-wrap gap-2 max-w-[85%] animate-[fadeIn_0.4s_ease-out]">
-                {QUICK_PROMPTS.map((prompt, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleQuickPrompt(prompt.text)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-low hover:bg-surface-container text-body-sm text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-primary/40 transition-all duration-200 cursor-pointer hover:shadow-sm active:scale-[0.97]"
-                  >
-                    <span className="text-[14px]">{prompt.emoji}</span>
-                    <span>{prompt.text}</span>
-                  </button>
-                ))}
+                {QUICK_PROMPTS_DATA.map((prompt, i) => {
+                  const pText = locale === 'id' ? prompt.textId : prompt.textEn;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleQuickPrompt(pText)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-low hover:bg-surface-container text-body-sm text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-primary/40 transition-all duration-200 cursor-pointer hover:shadow-sm active:scale-[0.97]"
+                    >
+                      <span className="text-[14px]">{prompt.emoji}</span>
+                      <span>{pText}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Mood-based recommendations (inline after messages) */}
+          {/* Mood-based recommendations */}
           {recommendations && !showDistressCard && (
             <div className="flex justify-start">
               <div className="w-7 shrink-0 mr-space-xs" />
               <div className="bg-surface-container rounded-2xl rounded-bl-md px-space-md py-space-sm max-w-[80%]">
-                <p className="text-label-sm font-bold text-on-surface-variant mb-space-xs">Try:</p>
+                <p className="text-label-sm font-bold text-on-surface-variant mb-space-xs">
+                  {locale === 'id' ? 'Saran tindakan:' : 'Try:'}
+                </p>
                 <div className="space-y-space-xs">
-                  {recommendations.map((rec, i) => (
-                    <div key={i} className="flex items-center gap-space-xs">
-                      <span className="text-[14px]">{rec.emoji}</span>
-                      {rec.link ? (
-                        <a
-                          href={rec.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-body-sm text-primary hover:underline"
-                        >
-                          {rec.text}
-                        </a>
-                      ) : (
-                        <span className="text-body-sm text-on-surface-variant">{rec.text}</span>
-                      )}
-                    </div>
-                  ))}
+                  {recommendations.map((rec, i) => {
+                    const rText = locale === 'id' ? rec.textId : rec.textEn;
+                    return (
+                      <div key={i} className="flex items-center gap-space-xs">
+                        <span className="text-[14px]">{rec.emoji}</span>
+                        {rec.link ? (
+                          <a
+                            href={rec.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-body-sm text-primary hover:underline"
+                          >
+                            {rText}
+                          </a>
+                        ) : (
+                          <span className="text-body-sm text-on-surface-variant">{rText}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -355,10 +391,16 @@ export default function PaxChat({ onClose }: PaxChatProps) {
             <div className="bg-error-container rounded-2xl p-space-lg shadow-md border border-error/20 animate-[fadeIn_0.3s_ease-out]">
               <div className="flex items-center gap-space-xs mb-space-sm">
                 <span className="material-symbols-outlined text-on-error-container text-[22px]">emergency</span>
-                <span className="text-label-lg font-bold text-on-error-container">You don't have to handle this alone.</span>
+                <span className="text-label-lg font-bold text-on-error-container">
+                  {locale === 'id'
+                    ? 'Kamu tidak harus menghadapi ini sendirian.'
+                    : "You don't have to handle this alone."}
+                </span>
               </div>
               <p className="text-body-sm text-on-error-container mb-space-md leading-relaxed">
-                If you feel like you might hurt yourself or you're in immediate danger, please contact local emergency services or someone you trust.
+                {locale === 'id'
+                  ? 'Jika kamu merasa ingin menyakiti diri atau dalam bahaya, segera hubungi layanan bantuan darurat atau seseorang yang kamu percayai.'
+                  : "If you feel like you might hurt yourself or you're in immediate danger, please contact local emergency services or someone you trust."}
               </p>
               <div className="flex flex-col gap-space-xs">
                 <a
@@ -374,7 +416,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
                   className="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-surface-container-lowest text-on-surface text-label-md font-medium hover:bg-surface-container-low transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">person</span>
-                  Talk to Someone You Trust
+                  {locale === 'id' ? 'Bicara dengan Orang Terpercaya' : 'Talk to Someone You Trust'}
                 </button>
               </div>
             </div>
@@ -407,15 +449,18 @@ export default function PaxChat({ onClose }: PaxChatProps) {
           <div ref={messagesEndRef} />
         </div>
 
-
-        {/* ── Input bar ─────────────────────────────── */}
+        {/* Input bar */}
         <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-lowest px-space-md py-space-sm">
-          {/* Input row */}
           <div className="flex items-end gap-space-xs">
-            {/* Tips lightbulb button */}
             <button
               type="button"
-              onClick={() => handleQuickPrompt('Berikan aku tips menjaga kesehatan mental hari ini')}
+              onClick={() =>
+                handleQuickPrompt(
+                  locale === 'id'
+                    ? 'Berikan aku tips menjaga kesehatan mental hari ini'
+                    : 'Give me a quick mental health tip for today'
+                )
+              }
               disabled={isTyping}
               className="w-10 h-10 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant hover:text-on-secondary-container flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               aria-label="Mental health tips"
@@ -428,7 +473,9 @@ export default function PaxChat({ onClose }: PaxChatProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type what's on your mind..."
+              placeholder={
+                locale === 'id' ? 'Ketik apa saja yang mengganggu pikiranmu...' : "Type what's on your mind..."
+              }
               disabled={isTyping}
               rows={1}
               className="flex-1 bg-surface-container-low rounded-xl px-space-md py-space-sm text-body-md text-on-surface placeholder:text-outline/70 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none transition-all disabled:opacity-50 max-h-[120px]"
@@ -444,7 +491,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
               className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              aria-label="Send"
+              aria-label={t('chat.send', 'Kirim')}
             >
               <span className="material-symbols-outlined text-[20px]">send</span>
             </button>
