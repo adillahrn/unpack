@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import PaxChat from '@/components/PaxChat';
 import { useTranslation } from '@/i18n';
+import { supabase } from '@/lib/supabaseClient';
 import {
   unpackMindDump,
   UnpackError,
@@ -51,21 +53,148 @@ const URGENCY_COLORS: Record<string, { bg: string; text: string; dot: string; ta
 const defaultText =
   "Tomorrow I have a presentation and I haven't finished my slides. My algorithm assignment is also due soon, my group hasn't replied, and I have a meeting tonight. I'm really tired and I don't know where to even begin…";
 
+// Extend Window for SpeechRecognition (vendor-prefixed in some browsers)
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+function getSpeechRecognition(): (new () => SpeechRecognition) | null {
+  const w = window as any;
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
 export default function Unpack() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [text, setText] = useState(defaultText);
   const [weight, setWeight] = useState(3);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [isBreathing, setIsBreathing] = useState(false);
   const [breatheLabel, setBreatheLabel] = useState('Breathe');
   const [unpackState, setUnpackState] = useState<UnpackState>(initialUnpackState);
+  const [showChat, setShowChat] = useState(false);
+
+  // Selection & Saving state
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // ─── Voice Input (Speech Recognition) ────────────────────────────────────────
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Snapshot of textarea content when voice starts — finals are appended here exactly once.
+  const baseTextRef = useRef('');
+
+  const stopVoice = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+  const startVoice = useCallback(() => {
+    setVoiceError(null);
+
+    const SRConstructor = getSpeechRecognition();
+    if (!SRConstructor) {
+      setVoiceError('Voice input is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+
+    // Snapshot current textarea as the base — everything spoken will be appended after this.
+    baseTextRef.current = text;
+
+    const recognition = new SRConstructor();
+    recognition.lang = 'id-ID'; // Bahasa Indonesia (fallback ke en-US kalau tidak tersedia)
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result && result[0]) {
+          if (result.isFinal) {
+            // Commit this final chunk to baseTextRef exactly once
+            const chunk = result[0].transcript.trim();
+            if (chunk) {
+              baseTextRef.current = baseTextRef.current.trimEnd() + ' ' + chunk;
+            }
+          } else {
+            interim += result[0].transcript;
+          }
+        }
+      }
+      // Display = committed base + live interim preview
+      const display = interim.trim()
+        ? baseTextRef.current.trimEnd() + ' ' + interim.trim()
+        : baseTextRef.current;
+      setText(display.trimStart());
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        setVoiceError('Microphone access denied. Please allow microphone permission.');
+      } else if (event.error !== 'aborted') {
+        setVoiceError(`Voice error: ${event.error}`);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      // When recognition ends, commit the base as the final text (drop any dangling interim)
+      setText(baseTextRef.current.trimStart());
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setVoiceError('Failed to start voice input.');
+    }
+  }, [text]);
+
+  const toggleVoice = useCallback(() => {
+    if (isListening) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
+  }, [isListening, startVoice, stopVoice]);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   const charCount = text.length;
   const items = unpackState.data?.items ?? [];
 
+  // When AI returns results, select all items by default
+  useEffect(() => {
+    if (unpackState.data && unpackState.data.items.length > 0) {
+      setSelectedIndices(unpackState.data.items.map((_, i) => i));
+      setSaveSuccessMessage(null);
+      setSaveError(null);
+    } else {
+      setSelectedIndices([]);
+    }
+  }, [unpackState.data]);
+
   const handleClear = useCallback(() => {
     setText('');
     setUnpackState(initialUnpackState);
+    setSelectedIndices([]);
+    setSaveSuccessMessage(null);
+    setSaveError(null);
   }, []);
 
   const handleBreathe = useCallback(() => {
@@ -83,6 +212,8 @@ export default function Unpack() {
     if (unpackState.isLoading) return;
 
     setUnpackState({ isLoading: true, error: null, data: null });
+    setSaveSuccessMessage(null);
+    setSaveError(null);
 
     try {
       const result = await unpackMindDump(text);
@@ -93,6 +224,67 @@ export default function Unpack() {
       setUnpackState({ isLoading: false, error: errorKey, data: null });
     }
   }, [text, unpackState.isLoading]);
+
+  const handleToggleSelect = useCallback((index: number) => {
+    setSelectedIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (selectedIndices.length === items.length) {
+      setSelectedIndices([]);
+    } else {
+      setSelectedIndices(items.map((_, i) => i));
+    }
+  }, [selectedIndices.length, items]);
+
+  const handleSaveToBag = useCallback(async () => {
+    if (selectedIndices.length === 0 || !unpackState.data?.unloadId || isSaving) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccessMessage(null);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('Not authenticated');
+      }
+
+      const selectedItems = selectedIndices
+        .map((index) => items[index])
+        .filter((item): item is BaggageItem => item !== undefined);
+        
+      const insertRows = selectedItems.map((item) => ({
+        unload_id: unpackState.data!.unloadId,
+        user_id: user.id,
+        title: item.title,
+        category: item.category,
+        urgency: item.urgency,
+        action_step: item.actionStep,
+        status: 'pending',
+      }));
+
+      const { error: dbError } = await supabase.from('baggage_items').insert(insertRows);
+
+      if (dbError) {
+        console.error('Save to bag error:', dbError);
+        throw dbError;
+      }
+
+      setSaveSuccessMessage(`${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} saved to My Bag! 🎒`);
+    } catch (err: any) {
+      console.error('Save to bag failed:', err);
+      setSaveError(err.message || 'Failed to save items to bag.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedIndices, items, unpackState.data, isSaving]);
 
   const handleFilterClick = useCallback((category: FilterCategory) => {
     setActiveFilter(category);
@@ -123,7 +315,6 @@ export default function Unpack() {
   return (
     <div className="flex flex-col w-full">
       <div className="w-full max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-md">
-
         {/* Top Step Bar & Overline */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
           <div className="inline-flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full shadow-sm w-fit">
@@ -131,14 +322,6 @@ export default function Unpack() {
             <span className="text-label-md text-primary font-bold uppercase tracking-wider">Step 01 of 02</span>
             <span className="text-outline text-label-md">•</span>
             <span className="text-label-md text-on-surface-variant">Brain Dump &amp; Sorting</span>
-          </div>
-          <div className="flex items-center gap-space-sm text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px] text-primary">spa</span>
-            <span className="text-label-sm uppercase tracking-widest text-on-surface-variant font-bold">Safe Desk Sanctuary</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
-            <span className="text-label-sm text-on-surface font-semibold bg-surface-container-low px-space-xs py-0.5 rounded">
-              {charCount} chars
-            </span>
           </div>
         </div>
 
@@ -157,7 +340,6 @@ export default function Unpack() {
 
         {/* Bento Upper Desk: Mind Dump Sandbox & Pax Speech Companion */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start mb-space-xl">
-
           {/* Input Sandbox */}
           <div className="lg:col-span-8 flex flex-col relative">
             <div className="absolute -top-3 left-12 w-24 h-6 bg-yellow-200/60 -rotate-2 rounded-sm shadow-xs z-10 pointer-events-none mix-blend-multiply" />
@@ -179,9 +361,21 @@ export default function Unpack() {
                   </button>
                   <button
                     type="button"
-                    className="text-primary hover:text-on-primary-fixed-variant transition-colors text-label-sm flex items-center gap-1 cursor-pointer"
+                    onClick={toggleVoice}
+                    className={`transition-colors text-label-sm flex items-center gap-1 cursor-pointer ${
+                      isListening
+                        ? 'text-error font-bold'
+                        : 'text-primary hover:text-on-primary-fixed-variant'
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[15px]">mic</span> Voice Dump
+                    {isListening && (
+                      <span className="relative flex h-2.5 w-2.5 mr-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-error" />
+                      </span>
+                    )}
+                    <span className="material-symbols-outlined text-[15px]">{isListening ? 'mic' : 'mic'}</span>
+                    {isListening ? 'Listening…' : 'Voice Dump'}
                   </button>
                 </div>
               </div>
@@ -202,11 +396,17 @@ export default function Unpack() {
                 />
               </div>
 
-              {/* Error message */}
+              {/* Error messages */}
               {unpackState.error && (
                 <div className="mt-space-sm px-space-md py-space-xs bg-error-container rounded-lg flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-on-error-container text-[18px]">error</span>
                   <span className="text-body-sm text-on-error-container">{t(unpackState.error)}</span>
+                </div>
+              )}
+              {voiceError && (
+                <div className="mt-space-sm px-space-md py-space-xs bg-error-container rounded-lg flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-on-error-container text-[18px]">mic_off</span>
+                  <span className="text-body-sm text-on-error-container">{voiceError}</span>
                 </div>
               )}
 
@@ -258,63 +458,47 @@ export default function Unpack() {
             </div>
           </div>
 
-          {/* Pax Companion Sticky Panel */}
+          {/* PAX Companion — Chat Entry Card */}
           <div className="lg:col-span-4 flex flex-col gap-space-md">
-            <div className="bg-surface-container-high rounded-xl p-space-lg shadow-sm relative overflow-hidden transition-all hover:shadow-md">
+            <div
+              className="bg-surface-container-high rounded-xl p-space-lg shadow-sm relative overflow-hidden transition-all hover:shadow-md cursor-pointer group"
+              onClick={() => setShowChat(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setShowChat(true)}
+            >
               <div className="absolute -top-2 left-6 w-16 h-5 bg-amber-200/80 rotate-2 rounded-xs shadow-xs pointer-events-none mix-blend-multiply" />
-              <div className="flex items-start gap-space-md">
-                <div className="relative shrink-0 mt-1">
-                  <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center shadow-inner relative overflow-hidden ring-4 ring-surface-container-lowest">
-                    <span className="material-symbols-outlined text-primary text-[32px] animate-bounce">backpack</span>
+
+              <div className="flex items-center gap-space-md mb-space-md">
+                <div className="relative shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center shadow-inner overflow-hidden ring-4 ring-surface-container-lowest">
+                    <img src="/unpack_logo.png" alt="PAX" className="w-8 h-8 object-contain" />
                   </div>
                   <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center ring-2 ring-surface-container-high">
-                    <span className="w-2 h-2 rounded-full bg-secondary" />
+                    <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                   </span>
                 </div>
-                <div className="flex-1 bg-surface-container-lowest rounded-xl p-space-md shadow-xs relative">
-                  <div className="absolute -left-2 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-r-[8px] border-r-surface-container-lowest border-b-[6px] border-b-transparent" />
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-label-sm font-bold text-primary uppercase">Pax • Your Companion</span>
-                    <span className="text-label-sm text-outline">Just now</span>
-                  </div>
-                  <p className="text-body-sm text-on-surface leading-snug">
-                    {unpackState.isLoading
-                      ? `"${t('unpack.loading')}"`
-                      : items.length > 0
-                        ? `"${t('unpack.results.paxRead')} It's not one giant mountain. It's just ${items.length} distinct, conquerable pebbles."`
-                        : '"Just get it out. No judgement here — I\'ll help you untangle this knot and unpack it piece by piece! ✨"'}
-                  </p>
+                <div>
+                  <span className="text-label-sm font-bold text-primary uppercase tracking-wider">PAX • Your Companion</span>
                 </div>
               </div>
-              <div className="mt-space-md bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
-                <div className="flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-secondary text-[18px]">self_improvement</span>
-                  <span className="text-label-sm text-on-surface-variant font-medium">Breathe in for 4s... hold 4s...</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleBreathe}
-                  className={`text-xs px-2.5 py-1 font-label-sm rounded-full transition-all cursor-pointer ${
-                    isBreathing
-                      ? 'bg-secondary text-on-secondary'
-                      : 'bg-secondary-container text-on-secondary-container hover:brightness-95'
-                  }`}
-                >
-                  {breatheLabel}
-                </button>
-              </div>
-            </div>
 
-            <div className="bg-amber-50 rounded-xl p-space-md shadow-xs rotate-[-0.8deg] hover:rotate-0 transition-transform duration-200">
-              <div className="flex items-center gap-space-xs mb-1">
-                <span className="material-symbols-outlined text-tertiary text-[16px]">push_pin</span>
-                <span className="text-label-sm font-bold text-tertiary uppercase">Campus Mind-Rule #1</span>
-              </div>
-              <p className="text-body-sm text-on-surface italic">
-                You don't have to carry the whole semester at 3:00 PM on a Tuesday. Just this single afternoon.
+              <p className="text-body-md text-on-surface leading-relaxed mb-space-lg">
+                I'm here to listen, no judgement.
               </p>
+
+              <button
+                type="button"
+                className="w-full inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] group-hover:translate-y-[1px] group-hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
+              >
+                <span>Talk to PAX</span>
+                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+              </button>
             </div>
           </div>
+
+          {/* PAX Chat Overlay */}
+          {showChat && <PaxChat onClose={() => setShowChat(false)} />}
         </div>
 
         {/* Live Unpacked Baggage Section — only show when we have results */}
@@ -333,11 +517,20 @@ export default function Unpack() {
                   {t('unpack.results.title')}
                 </h2>
               </div>
-              <div className="bg-surface-container px-space-md py-space-xs rounded-xl shadow-xs flex items-center gap-space-sm max-w-md">
-                <span className="material-symbols-outlined text-primary text-[20px] shrink-0">psychology_alt</span>
-                <p className="text-body-sm text-on-surface-variant">
-                  <strong className="text-on-surface">{t('unpack.results.paxRead')}</strong> It's not one giant mountain. It's just {items.length} distinct, conquerable pebbles:
-                </p>
+
+              {/* Selection Bar Actions */}
+              <div className="flex items-center gap-space-sm bg-surface-container px-space-md py-space-xs rounded-xl shadow-xs">
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAll}
+                  className="text-label-md font-bold text-primary hover:underline cursor-pointer"
+                >
+                  {selectedIndices.length === items.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="text-outline">•</span>
+                <span className="text-body-sm text-on-surface-variant">
+                  <strong className="text-on-surface">{selectedIndices.length}</strong> of {items.length} selected
+                </span>
               </div>
             </div>
 
@@ -359,38 +552,88 @@ export default function Unpack() {
               ))}
             </div>
 
-            {/* Dynamic Baggage Cards Grid */}
+            {/* Dynamic Baggage Cards Grid with Checkboxes */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-space-xl">
-              {items.filter((item) => isCardVisible(item.category)).map((item, index) => (
-                <BaggageCard key={index} item={item} t={t} />
-              ))}
+              {items.map((item, index) => {
+                if (!isCardVisible(item.category)) return null;
+                const isSelected = selectedIndices.includes(index);
+                return (
+                  <BaggageCard
+                    key={index}
+                    item={item}
+                    t={t}
+                    isSelected={isSelected}
+                    onToggle={() => handleToggleSelect(index)}
+                  />
+                );
+              })}
             </div>
 
-            {/* Unpack Balance Score */}
-            <div className="bg-surface-container-low rounded-xl p-space-lg shadow-xs mb-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md">
+            {/* Save to Bag Bar */}
+            <div className="bg-surface-container-low rounded-xl p-space-lg shadow-md mb-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md border border-outline-variant/30">
               <div className="flex items-center gap-space-md w-full md:w-auto">
-                <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0">
-                  <span className="material-symbols-outlined text-[24px]">balance</span>
+                <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0">
+                  <span className="material-symbols-outlined text-[24px]">backpack</span>
                 </div>
                 <div>
-                  <div className="flex items-center gap-space-xs">
-                    <span className="text-headline-sm text-on-surface">Unpack Balance Score</span>
-                    <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-label-sm font-bold">
-                      Defused by {Math.min(100, Math.round((items.length / Math.max(items.length, 1)) * 65 + 35))}%
-                    </span>
-                  </div>
+                  <h3 className="text-headline-sm text-on-surface font-bold">Select items to put in your Bag</h3>
                   <p className="text-body-sm text-on-surface-variant">
-                    By separating actionable steps from waiting and self-care, your burden is already lighter.
+                    {selectedIndices.length === 0
+                      ? 'Check the items above that you want to carry today.'
+                      : `Ready to save ${selectedIndices.length} selected item${selectedIndices.length > 1 ? 's' : ''} to My Bag.`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-space-sm w-full md:w-64">
-                <div className="flex-1 bg-surface-variant rounded-full h-3 overflow-hidden">
-                  <div className="bg-secondary h-full rounded-full transition-all duration-1000" style={{ width: '65%' }} />
-                </div>
-                <span className="text-label-md font-bold text-secondary">65% Clearer</span>
+
+              <div className="flex flex-col sm:flex-row items-center gap-space-sm w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSaveToBag}
+                  disabled={selectedIndices.length === 0 || isSaving}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs px-space-xl py-space-md rounded-full bg-secondary text-on-secondary text-label-lg font-bold shadow-[0_3px_0_#005236] hover:translate-y-[1px] hover:shadow-[0_2px_0_#005236] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {isSaving ? (
+                    <>
+                      <span>Saving to Bag…</span>
+                      <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[20px]">add_task</span>
+                      <span>Save ({selectedIndices.length}) to My Bag 🎒</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Save Success Banner */}
+            {saveSuccessMessage && (
+              <div className="mb-space-xl p-space-md rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-between gap-space-md shadow-md animate-fade-in">
+                <div className="flex items-center gap-space-sm">
+                  <span className="material-symbols-outlined text-secondary text-2xl">check_circle</span>
+                  <div>
+                    <h4 className="font-headline-sm text-headline-sm font-bold">{saveSuccessMessage}</h4>
+                    <p className="text-body-sm text-on-secondary-container/80">Items are now stored in your bag visualizer.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/my-bag')}
+                  className="px-space-md py-space-xs rounded-full bg-secondary text-on-secondary text-label-md font-bold hover:opacity-90 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Open My Bag →
+                </button>
+              </div>
+            )}
+
+            {/* Save Error Banner */}
+            {saveError && (
+              <div className="mb-space-xl p-space-md rounded-xl bg-error-container text-on-error-container flex items-center gap-space-sm shadow-sm">
+                <span className="material-symbols-outlined text-error text-2xl">error</span>
+                <p className="text-body-sm text-on-error-container">{saveError}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -414,17 +657,17 @@ export default function Unpack() {
             </div>
             <div>
               <span className="text-label-sm uppercase tracking-wider text-primary font-bold">Next Phase</span>
-              <h3 className="text-headline-md text-on-surface">Ready to tackle the next step?</h3>
+              <h3 className="text-headline-md text-on-surface">Feeling ready for one small step?</h3>
               <p className="text-body-sm text-on-surface-variant">
-                We'll take just the single top priority card and build a cozy 15-minute start plan.
+                We'll take just the single top priority card for a frictionless 10-minute start.
               </p>
             </div>
           </div>
           <Link
-            to="/start-here"
+            to="/unwind#small-action-section"
             className="inline-flex items-center justify-center gap-space-sm px-space-xl py-space-md rounded-full bg-primary text-on-primary text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
           >
-            <span>Proceed to 'Start Here'</span>
+            <span>Proceed to Small Action</span>
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </Link>
         </div>
@@ -433,36 +676,85 @@ export default function Unpack() {
   );
 }
 
-/** Renders a single baggage card with dynamic styling based on urgency/category */
-function BaggageCard({ item, t }: { item: BaggageItem; t: (key: string) => string }) {
-  const colors = URGENCY_COLORS[item.urgency] ?? URGENCY_COLORS.medium;
+/** Renders a single baggage card with dynamic styling based on urgency/category and a selection checkbox */
+function BaggageCard({
+  item,
+  t,
+  isSelected,
+  onToggle,
+}: {
+  item: BaggageItem;
+  t: (key: string) => string;
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
+  const colors = URGENCY_COLORS[item.urgency] ?? URGENCY_COLORS.medium!;
   const emoji = CATEGORY_EMOJI[item.category] ?? '📌';
 
   return (
-    <div className="baggage-card group relative bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+    <div
+      onClick={onToggle}
+      className={`baggage-card group relative rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 ${
+        isSelected
+          ? 'bg-surface-container-lowest border-secondary ring-2 ring-secondary/30'
+          : 'bg-surface-container-lowest/80 border-transparent opacity-80 hover:opacity-100'
+      }`}
+    >
       {/* Washi tape */}
-      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 ${colors.tape} rotate-[-1deg] rounded-xs shadow-xs pointer-events-none mix-blend-multiply group-hover:rotate-0 transition-transform`} />
+      <div
+        className={`absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 ${colors.tape} rotate-[-1deg] rounded-xs shadow-xs pointer-events-none mix-blend-multiply group-hover:rotate-0 transition-transform`}
+      />
+
       <div>
         <div className="flex items-center justify-between mb-space-sm pt-1">
-          <span className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}>
+          <span
+            className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-label-sm font-bold tracking-wide uppercase flex items-center gap-1`}
+          >
             <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
             {t(`unpack.urgency.${item.urgency}`)}
           </span>
+
+          {/* Selection Checkbox */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+              isSelected
+                ? 'bg-secondary text-on-secondary shadow-sm'
+                : 'bg-surface-container border border-outline-variant text-transparent'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px] font-bold">
+              check
+            </span>
+          </div>
         </div>
-        <h3 className="text-headline-sm text-on-surface mb-1">{item.title}</h3>
+
+        <h3 className="text-headline-sm text-on-surface mb-1">
+          {item.title}
+        </h3>
+
         <p className="text-label-md text-on-surface-variant mb-space-md flex items-center gap-1">
-          <span>{emoji} {t(`unpack.category.${item.category}`)}</span>
+          <span>
+            {emoji} {t(`unpack.category.${item.category}`)}
+          </span>
         </p>
-        <div className="bg-surface-container-low rounded-lg p-space-sm mb-space-md flex items-center justify-between">
-          <span className="text-body-sm text-on-surface-variant">{t('unpack.results.effort')}</span>
-          <span className="text-label-md text-on-surface font-bold">{item.actionStep.split(' ').slice(0, 4).join(' ')}...</span>
-        </div>
       </div>
+
+      {/* PAX Note */}
       <div className="bg-amber-50/80 rounded-lg p-space-sm mt-space-sm relative">
         <div className="flex items-start gap-1.5">
-          <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">lightbulb</span>
+          <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">
+            lightbulb
+          </span>
+
           <p className="text-body-sm text-on-surface leading-tight">
-            <strong className="text-tertiary">{t('unpack.results.paxNote')}</strong> "{item.actionStep}"
+            <strong className="text-tertiary">
+              {t('unpack.results.paxNote')}
+            </strong>{' '}
+            "{item.actionStep}"
           </p>
         </div>
       </div>

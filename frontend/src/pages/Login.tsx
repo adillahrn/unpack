@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from '@/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 function GoogleIcon() {
   return (
@@ -15,6 +17,7 @@ function GoogleIcon() {
 
 export default function Login() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +28,7 @@ export default function Login() {
     setError(null);
 
     if (!email.trim() || !password) {
-      setError('Email dan password wajib diisi.');
+      setError(t('auth.errorRequired', 'Email dan password wajib diisi.'));
       return;
     }
 
@@ -39,7 +42,7 @@ export default function Login() {
     setLoading(false);
 
     if (signInError) {
-      setError('Email atau password salah.');
+      setError(t('auth.errorCreds', 'Email atau password salah.'));
       return;
     }
 
@@ -61,6 +64,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-margin relative overflow-hidden">
+      {/* Top right language switcher */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* Ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary-fixed/30 rounded-full blur-3xl pointer-events-none" />
 
@@ -80,10 +88,10 @@ export default function Login() {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 bg-primary-fixed/60 -rotate-1 rounded-sm shadow-sm pointer-events-none" />
 
         <h2 className="text-headline-md text-on-surface mb-space-xs text-center">
-          Welcome back
+          {t('auth.welcome', 'Welcome back')}
         </h2>
         <p className="text-body-sm text-on-surface-variant text-center mb-space-lg">
-          Sign in to continue your journey
+          {t('auth.welcomeSub', 'Sign in to continue your journey')}
         </p>
 
         {error && (
@@ -96,7 +104,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-space-md">
           <div>
             <label htmlFor="email" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Email
+              {t('auth.email', 'Email')}
             </label>
             <input
               id="email"
@@ -111,7 +119,7 @@ export default function Login() {
 
           <div>
             <label htmlFor="password" className="block text-label-md text-on-surface-variant mb-space-xs">
-              Password
+              {t('auth.password', 'Password')}
             </label>
             <input
               id="password"
@@ -132,11 +140,11 @@ export default function Login() {
             {loading ? (
               <>
                 <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                <span>Signing in…</span>
+                <span>{t('auth.signingIn', 'Signing in…')}</span>
               </>
             ) : (
               <>
-                <span>Sign In</span>
+                <span>{t('auth.signIn', 'Sign In')}</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </>
             )}
@@ -145,7 +153,7 @@ export default function Login() {
 
         <div className="flex items-center gap-space-sm my-space-lg">
           <div className="h-px bg-outline-variant flex-1" />
-          <span className="text-body-sm text-on-surface-variant">atau</span>
+          <span className="text-body-sm text-on-surface-variant">{t('auth.or', 'or')}</span>
           <div className="h-px bg-outline-variant flex-1" />
         </div>
 
@@ -156,13 +164,13 @@ export default function Login() {
           className="w-full inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full border border-outline-variant hover:bg-surface-container-low text-on-surface font-label-lg text-label-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <GoogleIcon />
-          <span>Continue with Google</span>
+          <span>{t('auth.continueGoogle', 'Continue with Google')}</span>
         </button>
 
         <p className="text-center text-body-sm text-on-surface-variant mt-space-lg">
-          Don't have an account?{' '}
+          {t('auth.noAccount', "Don't have an account?")}{' '}
           <Link to="/register" className="text-primary font-semibold hover:underline">
-            Sign Up
+            {t('auth.signUp', 'Sign Up')}
           </Link>
         </p>
       </div>
