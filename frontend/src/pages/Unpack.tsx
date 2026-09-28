@@ -13,11 +13,7 @@ import {
 
 type FilterCategory = 'all' | 'academic' | 'social' | 'personal' | 'deadline' | 'health' | 'financial' | 'other';
 
-const weightLevels: Record<number, string> = {
-  1: 'Light 🎒',
-  2: 'Medium 🎒🎒',
-  3: 'Heavy 🎒🎒🎒',
-};
+
 
 const CATEGORY_EMOJI: Record<string, string> = {
   academic: '📚',
@@ -80,7 +76,7 @@ export default function Unpack() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState(defaultText);
-  const [weight, setWeight] = useState(3);
+
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [isBreathing, setIsBreathing] = useState(false);
   const [breatheLabel, setBreatheLabel] = useState('Breathe');
@@ -422,25 +418,7 @@ export default function Unpack() {
                 </div>
               )}
 
-              <div className="mt-space-md pt-space-sm border-t border-surface-variant/40 flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-                {/* Quick Bag Weight Slider */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-space-xs sm:gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full">
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-tertiary text-[18px]">backpack</span>
-                    <span className="text-label-sm uppercase font-bold text-on-surface-variant">Mental Weight:</span>
-                  </div>
-                  <div className="flex items-center gap-space-xs">
-                    <input
-                      type="range"
-                      min={1}
-                      max={3}
-                      value={weight}
-                      onChange={(e) => setWeight(Number(e.target.value))}
-                      className="w-24 accent-primary cursor-pointer"
-                    />
-                    <span className="text-label-md text-tertiary font-bold">{weightLevels[weight]}</span>
-                  </div>
-                </div>
+              <div className="mt-space-md pt-space-sm border-t border-surface-variant/40 flex flex-col md:flex-row md:items-center justify-end gap-space-md">
 
                 {/* Unpack Button */}
                 <button
