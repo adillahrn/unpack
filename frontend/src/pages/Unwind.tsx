@@ -20,11 +20,11 @@ interface DBBaggageItem {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SOUND_FILES: Record<SoundKey, string> = {
-  rain: '/rainsound.mp3',
-  library: '/sounds/quiet-library.mp3',
-  wind: '/sounds/gentle-wind.mp3',
-  cafe: '/sounds/late-night-cafe.mp3',
-  night: '/room.mp3',
+  rain: '/rainy-day-in-the-forest.mp3',
+  library: '/quiet-library.mp3',
+  wind: '/wind-in-the-trees.mp3',
+  cafe: '/late-night-cafe.mp3',
+  night: '/room-ambience-quiet-room.mp3',
 };
 
 const BREATH_ORDER: BreathPhase[] = ['inhale', 'hold', 'exhale'];
