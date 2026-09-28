@@ -55,8 +55,20 @@ const defaultText =
 
 // Extend Window for SpeechRecognition (vendor-prefixed in some browsers)
 interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
+  results: any;
   resultIndex: number;
+}
+
+interface SpeechRecognition {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: any) => void;
+  onend: () => void;
 }
 
 function getSpeechRecognition(): (new () => SpeechRecognition) | null {

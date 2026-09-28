@@ -481,8 +481,8 @@ function FloatModal() {
 // ─── Plant Modal ──────────────────────────────────────────────────────────────
 function PlantSVG({ stage }: { stage: PlantStage }) {
   // Heights / sizes per stage for stem, leaves, flower
-  const stemH   = [20, 50, 80, 95][stage];
-  const leafScale = [0, 0.6, 1, 1][stage];
+  const stemH   = [20, 50, 80, 95][stage] ?? 20;
+  const leafScale = [0, 0.6, 1, 1][stage] ?? 0;
   const hasFlower = stage >= 3;
   const hasBud    = stage >= 2;
 
