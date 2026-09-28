@@ -81,6 +81,8 @@ const isAcademicGroup = (item: DBBaggageItem) => item.category === 'academic' ||
 
 function matchesFilter(item: DBBaggageItem, filter: FilterId): boolean {
   if (filter === 'archive') return isArchived(item);
+  if (isArchived(item)) return false; // Hide archived items from other tabs
+
   switch (filter) {
     case 'urgent':
       return item.urgency === 'high';
@@ -250,11 +252,11 @@ export default function MyBag() {
   const load = activeItems.reduce((sum, i) => sum + URGENCY_RANK[i.urgency], 0);
   const capacityPercent = Math.min(100, Math.round((load / CAPACITY_POINTS) * 100));
 
-  const filters: { id: FilterId; label: string }[] = [
-    { id: 'all', label: t('mybag.filterAll', 'All') },
-    { id: 'urgent', label: t('mybag.filterUrgent', 'Urgent') },
-    { id: 'academic', label: t('mybag.filterAcademic', 'Academic') },
-    { id: 'personal', label: t('mybag.filterPersonal', 'Personal') },
+  const filters: { id: FilterId; label: string; count: number }[] = [
+    { id: 'all', label: t('mybag.filterAll', 'All'), count: activeItems.length },
+    { id: 'urgent', label: t('mybag.filterUrgent', 'Urgent'), count: activeItems.filter(i => i.urgency === 'high').length },
+    { id: 'academic', label: t('mybag.filterAcademic', 'Academic'), count: activeItems.filter(isAcademicGroup).length },
+    { id: 'personal', label: t('mybag.filterPersonal', 'Personal'), count: activeItems.filter(i => !isAcademicGroup(i)).length },
   ];
 
   return (
@@ -350,20 +352,34 @@ export default function MyBag() {
             {/* List side */}
             <div className="w-full lg:w-2/3 space-y-space-md">
               {/* Filter Tabs */}
-              <div className="flex items-center gap-space-xs border-b border-outline-variant/30 pb-2 overflow-x-auto">
-                {filters.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setActiveFilter(f.id)}
-                    className={`px-4 py-2 rounded-full font-label-md text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                      activeFilter === f.id
-                        ? 'bg-primary text-on-primary shadow-xs'
-                        : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between border-b border-outline-variant/30 pb-2 overflow-x-auto gap-4">
+                <div className="flex items-center gap-space-xs">
+                  {filters.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setActiveFilter(f.id)}
+                      className={`px-4 py-2 rounded-full font-label-md text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                        activeFilter === f.id
+                          ? 'bg-primary text-on-primary shadow-xs'
+                          : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {f.label} ({f.count})
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setActiveFilter('archive')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-label-md text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeFilter === 'archive'
+                      ? 'bg-primary text-on-primary shadow-xs'
+                      : 'text-primary hover:bg-primary/10'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">inventory_2</span>
+                  Unpacked History
+                </button>
               </div>
 
               {/* Items list */}
