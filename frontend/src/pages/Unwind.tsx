@@ -549,7 +549,7 @@ export default function Unwind() {
                   {t('unwind.title', 'Ruang Unwind')}
                 </h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant mt-4 max-w-xl">
-                  {t('unwind.heroDesc', 'You've sorted your thoughts. Now let's ease into action — start with one small pebble, then settle the rest of your mind.')}
+                  {t('unwind.heroDesc', 'You\'ve sorted your thoughts. Now let\'s ease into action — start with one small pebble, then settle the rest of your mind.')}
                 </p>
               </div>
             </div>
