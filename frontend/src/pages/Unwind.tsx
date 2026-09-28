@@ -31,6 +31,16 @@ const BREATH_ORDER: BreathPhase[] = ['inhale', 'hold', 'exhale'];
 const PLACEHOLDER_STEPS = ['Packed directly from My Bag', 'Packed from mind dump'];
 const URGENCY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  academic: '📚',
+  deadline: '📅',
+  social: '👥',
+  personal: '🪫',
+  health: '💚',
+  financial: '💰',
+  other: '📌',
+};
+
 function getMicroStep(item: DBBaggageItem, t: (key: string, fallback?: string) => string): { text: string; duration: number } {
   const step = item.action_step?.trim();
   if (step && !PLACEHOLDER_STEPS.includes(step)) return { text: step, duration: 10 };
@@ -281,6 +291,44 @@ function BreatheModal() {
   );
 }
 
+// ─── Single Pebble Timer ──────────────────────────────────────────────────────
+function usePebbleTimer(durationMinutes: number) {
+  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
+  const [running, setRunning] = useState(false);
+  const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    if (!running || finished) return;
+    const id = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          setRunning(false);
+          setFinished(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running, finished]);
+
+  const start = () => {
+    setRunning(true);
+    setFinished(false);
+  };
+  const pause = () => setRunning(false);
+  const resetTimer = (mins: number) => {
+    setSecondsLeft(mins * 60);
+    setRunning(false);
+    setFinished(false);
+  };
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+  const ss = String(secondsLeft % 60).padStart(2, '0');
+
+  return { mm, ss, running, finished, start, pause, resetTimer, secondsLeft };
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Unwind() {
   const { t } = useTranslation();
@@ -305,6 +353,8 @@ export default function Unwind() {
   });
 
   const bagItem = items[itemIndex] ?? null;
+  const ms = bagItem ? getMicroStep(bagItem, t) : null;
+  const timer = usePebbleTimer(ms?.duration ?? 10);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -335,6 +385,11 @@ export default function Unwind() {
   useEffect(() => {
     setItemIndex((i) => (items.length === 0 ? 0 : Math.min(i, items.length - 1)));
   }, [items.length]);
+
+  // Reset timer when item changes
+  useEffect(() => {
+    if (ms) timer.resetTimer(ms.duration);
+  }, [itemIndex, ms?.duration]);
 
   const updateStatus = useCallback(async (id: string, status: BagStatus): Promise<boolean> => {
     const { error } = await supabase.from('baggage_items').update({ status }).eq('id', id);
@@ -382,8 +437,6 @@ export default function Unwind() {
         .catch(() => setPlaying(false));
     }
   };
-
-  const ms = bagItem ? getMicroStep(bagItem, t) : null;
 
   const soundsList: { key: SoundKey; emoji: string; titleKey: string; fallbackTitle: string; descKey: string; fallbackDesc: string }[] = [
     { key: 'rain', emoji: '🌧️', titleKey: 'unwind.soundRainTitle', fallbackTitle: 'Campus Rain 🌧️', descKey: 'unwind.soundRainDesc', fallbackDesc: 'Soft rain outside a quiet campus window.' },
@@ -496,19 +549,153 @@ export default function Unwind() {
                   {t('unwind.title', 'Ruang Unwind')}
                 </h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant mt-4 max-w-xl">
-                  {t('unwind.subtitle', 'Ambil napas sejenak, rileks, dan tenangkan pikiranmu')}
+                  {t('unwind.heroDesc', 'You've sorted your thoughts. Now let's ease into action — start with one small pebble, then settle the rest of your mind.')}
                 </p>
               </div>
             </div>
           </section>
 
-          {/* SECTION 01: RESETS */}
+          {/* SECTION 01: SMALL ACTION — "TODAY'S SINGLE PEBBLE" */}
+          <section className="py-8" id="small-action-section">
+            <div className="mb-8">
+              <h2 className="font-headline-lg text-headline-lg text-on-surface">🌱 {t('unwind.smallActionTitle', 'One Small Pebble')}</h2>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+                {t('unwind.smallActionDesc', 'Before you unwind, take care of just one thing. Pick the top pebble from your bag and give it a gentle, frictionless start.')}
+              </p>
+            </div>
+
+            {loadingItems && (
+              <div className="flex items-center justify-center py-12 gap-3">
+                <span className="material-symbols-outlined text-primary text-[28px] animate-spin">progress_activity</span>
+                <span className="text-body-md text-on-surface-variant">{t('unwind.loadingBag', 'Loading your bag…')}</span>
+              </div>
+            )}
+
+            {itemsError && (
+              <div className="p-space-md rounded-xl bg-error-container text-on-error-container flex items-center gap-space-sm shadow-sm mb-6">
+                <span className="material-symbols-outlined text-error text-2xl">error</span>
+                <p className="text-body-sm text-on-error-container">{itemsError}</p>
+              </div>
+            )}
+
+            {!loadingItems && !itemsError && items.length === 0 && (
+              <div className="bg-surface-container-lowest rounded-2xl p-8 text-center shadow-sm">
+                <span className="material-symbols-outlined text-[40px] text-outline/50 mb-3">inventory_2</span>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">{t('unwind.emptyBagTitle', 'Your bag is empty')}</h3>
+                <p className="text-body-md text-on-surface-variant max-w-md mx-auto">
+                  {t('unwind.emptyBagDesc', 'Head to Unpack to dump your thoughts and sort them into pebbles first. Then come back here to start chipping away.')}
+                </p>
+              </div>
+            )}
+
+            {bagItem && ms && (
+              <div className="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+                {/* Pebble Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  {/* Left: Pebble info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-label-sm font-bold uppercase tracking-wider">
+                        {t('unwind.todaysPebble', "Today's Single Pebble")}
+                      </span>
+                    </div>
+
+                    <h3 className="font-headline-md text-headline-md text-on-surface font-bold mb-1">
+                      {bagItem.title}
+                    </h3>
+                    <p className="text-body-sm text-on-surface-variant flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px] text-tertiary">timer</span>
+                      {t('unwind.estimatedEffort', 'Estimated effort:')} {ms.duration} {t('unwind.minutes', 'minutes')} • {t('unwind.lowFriction', 'Low friction')}
+                    </p>
+                  </div>
+
+                  {/* Right: Timer + CTA */}
+                  <div className="flex items-center gap-5">
+                    <div className="text-center">
+                      <span className="font-mono text-[32px] md:text-[36px] font-bold text-on-surface tracking-tight tabular-nums">
+                        {timer.mm}<span className="text-outline mx-0.5">:</span>{timer.ss}
+                      </span>
+                    </div>
+
+                    {timer.finished ? (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(bagItem.id, 'completed')}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-secondary text-on-secondary text-label-lg font-bold shadow-[0_3px_0_#005236] hover:translate-y-[1px] hover:shadow-[0_2px_0_#005236] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                        {t('unwind.markDone', 'Mark Done')}
+                      </button>
+                    ) : timer.running ? (
+                      <button
+                        type="button"
+                        onClick={timer.pause}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-surface-container-high text-on-surface text-label-lg font-bold shadow-sm hover:bg-surface-container-highest transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">pause</span>
+                        {t('unwind.pauseTimer', 'Pause')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={timer.start}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary text-label-lg font-bold shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        {t('unwind.beginSoftly', 'Begin Softly')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Micro step hint */}
+                <div className="mt-5 pt-5 border-t border-surface-variant/30">
+                  <div className="flex items-start gap-2 bg-amber-50/80 rounded-xl p-4">
+                    <span className="material-symbols-outlined text-tertiary text-[18px] shrink-0 mt-0.5">lightbulb</span>
+                    <div>
+                      <p className="text-body-sm text-on-surface leading-relaxed">
+                        <strong className="text-tertiary">{t('unwind.nextTinyMove', 'Next tiny move:')}</strong> {ms.text}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Item navigation */}
+                {items.length > 1 && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-label-sm text-on-surface-variant">
+                      {CATEGORY_EMOJI[bagItem.category] ?? '📌'} {itemIndex + 1} of {items.length} pebbles
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setItemIndex((i) => Math.max(0, i - 1))}
+                        disabled={itemIndex === 0}
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setItemIndex((i) => Math.min(items.length - 1, i + 1))}
+                        disabled={itemIndex === items.length - 1}
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 02: RESETS */}
           <section className="py-8" id="quick-resets-section">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
               <div>
                 <h2 className="font-headline-lg text-headline-lg text-on-surface">✨ {t('unwind.resetsTitle', 'Jeda Singkat Tenang')}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  {t('unwind.resetsDesc', 'Latihan interaktif ringan untuk menenangkan pikiran yang tegang')}
+                  {t('unwind.resetsDesc', 'Done with your pebble? Or need a breather first? These quick exercises help reset your mind.')}
                 </p>
               </div>
             </div>
@@ -544,12 +731,12 @@ export default function Unwind() {
             </div>
           </section>
 
-          {/* SECTION 02: SOUND */}
+          {/* SECTION 03: SOUND */}
           <section className="py-10">
             <div className="mb-6">
               <h2 className="font-headline-lg text-headline-lg text-on-surface">🎧 {t('unwind.soundTitle', 'Suara Suasana & Ambient')}</h2>
               <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                {t('unwind.soundDesc', 'Pilih musik latar tenang untuk menemani belajarmu')}
+                {t('unwind.soundDesc', 'Set the mood while you work on your pebble or unwind afterward.')}
               </p>
             </div>
 
@@ -599,36 +786,32 @@ export default function Unwind() {
               })}
             </div>
           </section>
-
-          {/* SECTION 03: SMALL ACTION */}
-          <section className="py-10 mb-8" id="small-action-section">
-            <div className="bg-surface-container-low/70 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden">
-              <div className="max-w-3xl">
-                <h2 className="font-headline-lg text-headline-lg text-on-surface">🌱 {t('unwind.smallActionTitle', 'Satu Langkah Mikro Kecil')}</h2>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                  {t('unwind.smallActionDesc', 'Pilih satu kartu beban teratas dan luangkan 10 menit untuk melangkah tanpa rasa panik.')}
-                </p>
-              </div>
-
-              {bagItem && ms && (
-                <div className="mt-8 bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
-                  <h3 className="font-headline-sm text-headline-sm text-on-surface">{bagItem.title}</h3>
-                  <p className="text-body-md text-on-surface-variant mt-2">
-                    <strong>{t('unwind.nextTinyMove', 'Next tiny move:')}</strong> {ms.text}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => updateStatus(bagItem.id, 'completed')}
-                    className="mt-4 px-6 py-2.5 rounded-full bg-secondary text-on-secondary font-label-md text-label-md cursor-pointer"
-                  >
-                    {t('unwind.completeAction', 'Tandai Selesai')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
         </div>
       </div>
+
+      {/* MODAL OVERLAY */}
+      {openModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 backdrop-blur-sm p-4"
+          onClick={() => setOpenModal(null)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-lg max-w-lg w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setOpenModal(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+
+            {openModal === 'bubble' && <BubbleModal />}
+            {openModal === 'breathe' && <BreatheModal />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
