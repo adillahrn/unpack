@@ -22,6 +22,7 @@ export default function Header() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('unpack-theme');
+
     if (savedTheme === 'dark') {
       setIsDark(true);
       document.documentElement.classList.add('dark');
@@ -33,6 +34,7 @@ export default function Header() {
   const toggleTheme = () => {
     const newDark = !isDark;
     setIsDark(newDark);
+
     if (newDark) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('unpack-theme', 'dark');
@@ -65,6 +67,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center gap-space-xs bg-surface-container-low px-space-xs py-space-xs rounded-full shadow-[0_1px_3px_rgba(41,37,36,0.04)]">
             {navItems.map(({ path, label }) => {
               const isActive = location.pathname === path;
+
               return (
                 <Link
                   key={path}
@@ -95,6 +98,13 @@ export default function Header() {
               </span>
             </button>
 
+            <Link
+              to="/unpack"
+              className="hidden sm:inline-flex items-center justify-center px-space-lg py-space-sm rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all"
+            >
+              Unpack your mind
+            </Link>
+
             {session ? (
               <button
                 onClick={handleLogout}
@@ -113,7 +123,9 @@ export default function Header() {
                 aria-label={t('nav.login', 'Login')}
                 title={t('nav.login', 'Login')}
               >
-                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+                <span className="material-symbols-outlined text-on-primary text-[18px]">
+                  person
+                </span>
               </Link>
             )}
           </div>
@@ -125,7 +137,9 @@ export default function Header() {
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map(({ path, label }) => {
             const isActive = location.pathname === path;
+
             let icon = 'home';
+
             if (path === '/unpack') icon = 'psychology';
             if (path === '/unwind') icon = 'air';
             if (path === '/my-bag') icon = 'backpack';
@@ -140,10 +154,22 @@ export default function Header() {
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
-                <span className={`material-symbols-outlined ${isActive ? 'filled' : ''}`} style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                <span
+                  className={`material-symbols-outlined ${
+                    isActive ? 'filled' : ''
+                  }`}
+                  style={{
+                    fontVariationSettings: isActive
+                      ? "'FILL' 1"
+                      : "'FILL' 0",
+                  }}
+                >
                   {icon}
                 </span>
-                <span className="text-[10px] font-label-sm mt-1">{label}</span>
+
+                <span className="text-[10px] font-label-sm mt-1">
+                  {label}
+                </span>
               </Link>
             );
           })}
