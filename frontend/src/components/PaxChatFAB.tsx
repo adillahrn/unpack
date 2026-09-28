@@ -41,14 +41,20 @@ export default function PaxChatFAB() {
           }
         `}
       >
-        <span
-          className="material-symbols-outlined text-[24px] transition-transform duration-200"
-          style={{
-            fontVariationSettings: isOpen ? "'FILL' 0" : "'FILL' 1",
-          }}
-        >
-          {isOpen ? 'close' : 'chat'}
-        </span>
+        {isOpen ? (
+          <span
+            className="material-symbols-outlined text-[24px] transition-transform duration-200"
+            style={{ fontVariationSettings: "'FILL' 0" }}
+          >
+            close
+          </span>
+        ) : (
+          <img
+            src="/unpack_logo.png"
+            alt="Pax Chat"
+            className="w-8 h-8 object-contain animate-[logoZoomInOut_2.5s_ease-in-out_infinite]"
+          />
+        )}
       </button>
 
       {/* Pax Chat overlay */}

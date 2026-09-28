@@ -255,6 +255,11 @@
   100% { transform: translateY(-320px) scale(0.7); opacity: 0; }
 }
 
+@keyframes logoZoomInOut {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
 @keyframes bubbleDrift {
   0% { transform: translateY(0) translateX(0); }
   33% { transform: translateY(-8px) translateX(5px); }
