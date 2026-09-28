@@ -81,7 +81,6 @@ const isAcademicGroup = (item: DBBaggageItem) => item.category === 'academic' ||
 
 function matchesFilter(item: DBBaggageItem, filter: FilterId): boolean {
   if (filter === 'archive') return isArchived(item);
-  if (isArchived(item)) return false;
   switch (filter) {
     case 'urgent':
       return item.urgency === 'high';
@@ -94,47 +93,70 @@ function matchesFilter(item: DBBaggageItem, filter: FilterId): boolean {
   }
 }
 
-function PocketSlot({
-  slot,
-  items,
-  onClick,
-  t,
-}: {
-  slot: (typeof SLOTS)[number];
-  items: DBBaggageItem[];
-  onClick: () => void;
-  t: (key: string, fallback?: string) => string;
-}) {
-  const first = items[0];
-  const extra = items.length - 1;
-  const empty = items.length === 0;
-
+function BackpackSVG({ itemsBySlot }: { itemsBySlot: Record<SlotKey, DBBaggageItem[]> }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={empty}
-      className={`w-full p-space-md rounded-xl text-left border transition-all ${
-        empty
-          ? 'bg-surface-container-low/40 border-outline-variant/20 opacity-50 cursor-not-allowed'
-          : 'bg-surface-container-lowest border-outline-variant/40 hover:border-primary cursor-pointer shadow-xs'
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="font-label-md font-bold text-on-surface flex items-center gap-1.5">
-          <span>{slot.emoji}</span>
-          <span>{t(slot.labelKey, slot.fallback)}</span>
-        </span>
-        <span className="font-label-sm text-xs px-2 py-0.5 rounded-full bg-surface-container font-bold text-on-surface-variant">
-          {items.length}
-        </span>
-      </div>
-      {first && (
-        <p className="font-body-sm text-xs text-on-surface-variant mt-1.5 line-clamp-1">
-          {first.title} {extra > 0 && <span className="font-bold text-primary">(+{extra})</span>}
-        </p>
-      )}
-    </button>
+    <div className="relative w-64 h-80 mx-auto">
+       <svg viewBox="0 0 200 250" className="w-full h-full drop-shadow-xl overflow-visible">
+         {/* Shoulder straps */}
+         <path d="M 60 50 C 30 10, 10 80, 40 180" fill="none" stroke="#4c1d95" strokeWidth="12" strokeLinecap="round" opacity="0.8" />
+         <path d="M 140 50 C 170 10, 190 80, 160 180" fill="none" stroke="#4c1d95" strokeWidth="12" strokeLinecap="round" opacity="0.8" />
+         
+         {/* Top handle */}
+         <path d="M 80 45 C 80 15, 120 15, 120 45" fill="none" stroke="#6d28d9" strokeWidth="10" strokeLinecap="round" />
+         
+         {/* Main Body (Main Pocket - algo) */}
+         <rect x="40" y="60" width="120" height="150" rx="30" fill="#a78bfa" />
+         
+         {/* Side Mesh Left (chat) */}
+         <path d="M 40 120 C 15 120, 15 180, 40 185 Z" fill="#ddd6fe" />
+         
+         {/* Side Mesh Right */}
+         <path d="M 160 120 C 185 120, 185 180, 160 185 Z" fill="#ddd6fe" />
+
+         {/* Top Flap (presentation) */}
+         <path d="M 35 60 Q 100 20 165 60 L 155 110 Q 100 140 45 110 Z" fill="#7c3aed" />
+         {/* Buckles */}
+         <rect x="70" y="100" width="12" height="35" fill="#4c1d95" rx="3" />
+         <rect x="118" y="100" width="12" height="35" fill="#4c1d95" rx="3" />
+         
+         {/* Front Pouch (walk) */}
+         <rect x="60" y="140" width="80" height="55" rx="15" fill="#c4b5fd" />
+         <path d="M 60 160 Q 100 170 140 160" fill="none" stroke="#8b5cf6" strokeWidth="3" opacity="0.5" />
+
+         {/* Badges for counts */}
+         {/* Top Flap - presentation */}
+         {itemsBySlot.presentation.length > 0 && (
+           <g transform="translate(100, 75)">
+             <circle cx="0" cy="0" r="14" fill="#fb923c" stroke="#fff" strokeWidth="2" />
+             <text x="0" y="5" fontSize="14" fontWeight="bold" fill="#fff" textAnchor="middle" fontFamily="sans-serif">{itemsBySlot.presentation.length}</text>
+           </g>
+         )}
+
+         {/* Main pocket - algo */}
+         {itemsBySlot.algo.length > 0 && (
+           <g transform="translate(100, 122)">
+             <circle cx="0" cy="0" r="14" fill="#f43f5e" stroke="#fff" strokeWidth="2" />
+             <text x="0" y="5" fontSize="14" fontWeight="bold" fill="#fff" textAnchor="middle" fontFamily="sans-serif">{itemsBySlot.algo.length}</text>
+           </g>
+         )}
+
+         {/* Front pouch - walk */}
+         {itemsBySlot.walk.length > 0 && (
+           <g transform="translate(100, 165)">
+             <circle cx="0" cy="0" r="14" fill="#3b82f6" stroke="#fff" strokeWidth="2" />
+             <text x="0" y="5" fontSize="14" fontWeight="bold" fill="#fff" textAnchor="middle" fontFamily="sans-serif">{itemsBySlot.walk.length}</text>
+           </g>
+         )}
+
+         {/* Side mesh - chat */}
+         {itemsBySlot.chat.length > 0 && (
+           <g transform="translate(30, 150)">
+             <circle cx="0" cy="0" r="14" fill="#10b981" stroke="#fff" strokeWidth="2" />
+             <text x="0" y="5" fontSize="14" fontWeight="bold" fill="#fff" textAnchor="middle" fontFamily="sans-serif">{itemsBySlot.chat.length}</text>
+           </g>
+         )}
+       </svg>
+    </div>
   );
 }
 
@@ -290,65 +312,130 @@ export default function MyBag() {
           </div>
         )}
 
-        {/* Content list */}
+        {/* Content layout */}
         {!isLoading && !error && items.length > 0 && (
-          <div className="space-y-space-md">
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-space-xs border-b border-outline-variant/30 pb-2">
-              {filters.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id)}
-                  className={`px-4 py-2 rounded-full font-label-md text-sm font-semibold transition-all cursor-pointer ${
-                    activeFilter === f.id
-                      ? 'bg-primary text-on-primary shadow-xs'
-                      : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+          <div className="flex flex-col lg:flex-row gap-space-lg items-start">
+            
+            {/* Backpack Visualizer */}
+            <div className="w-full lg:w-1/3 shrink-0 bg-surface-container-low rounded-2xl p-space-lg flex flex-col items-center border border-outline-variant/20">
+              <h3 className="font-headline-sm text-headline-sm font-bold text-center text-on-surface mb-2">
+                Inside Your Bag
+              </h3>
+              <p className="text-body-sm text-center text-on-surface-variant mb-6">
+                Your tasks are automatically sorted into different pockets based on urgency and category.
+              </p>
+              
+              <BackpackSVG itemsBySlot={itemsBySlot} />
+              
+              <div className="mt-6 w-full space-y-2">
+                <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-2 rounded-lg shadow-sm border border-outline-variant/30">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#fb923c]"></span> Top Flap (Immediate)</span>
+                  <span className="font-bold text-on-surface">{itemsBySlot.presentation.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-2 rounded-lg shadow-sm border border-outline-variant/30">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#f43f5e]"></span> Main Pocket (Academic)</span>
+                  <span className="font-bold text-on-surface">{itemsBySlot.algo.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-2 rounded-lg shadow-sm border border-outline-variant/30">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#3b82f6]"></span> Front Pouch (Self-Care)</span>
+                  <span className="font-bold text-on-surface">{itemsBySlot.walk.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-2 rounded-lg shadow-sm border border-outline-variant/30">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#10b981]"></span> Side Mesh (Social)</span>
+                  <span className="font-bold text-on-surface">{itemsBySlot.chat.length}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Items list */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
-              {visibleItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
-                        {CATEGORY_EMOJI[item.category] ?? '📌'} {t(`unpack.category.${item.category}`, item.category)}
-                      </span>
-                      <span className="text-xs font-bold text-primary uppercase">
-                        {t(`unpack.urgency.${item.urgency}`, item.urgency)}
-                      </span>
+            {/* List side */}
+            <div className="w-full lg:w-2/3 space-y-space-md">
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-space-xs border-b border-outline-variant/30 pb-2 overflow-x-auto">
+                {filters.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setActiveFilter(f.id)}
+                    className={`px-4 py-2 rounded-full font-label-md text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                      activeFilter === f.id
+                        ? 'bg-primary text-on-primary shadow-xs'
+                        : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Items list */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                {visibleItems.map((item) => {
+                  const isResolved = item.status === 'completed';
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className={`bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 ${
+                        isResolved ? 'opacity-70 bg-surface-container-low grayscale-[20%]' : ''
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isResolved ? 'bg-surface-variant text-on-surface-variant line-through' : 'bg-surface-container text-on-surface-variant'}`}>
+                            {CATEGORY_EMOJI[item.category] ?? '📌'} {t(`unpack.category.${item.category}`, item.category)}
+                          </span>
+                          <span className={`text-xs font-bold uppercase ${isResolved ? 'text-on-surface-variant line-through' : 'text-primary'}`}>
+                            {t(`unpack.urgency.${item.urgency}`, item.urgency)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 mb-2">
+                          <button
+                            onClick={() => changeStatus(item.id, isResolved ? 'pending' : 'completed')}
+                            className={`shrink-0 mt-0.5 cursor-pointer flex items-center justify-center w-6 h-6 rounded-full border-2 transition-colors ${
+                              isResolved 
+                                ? 'bg-primary border-primary text-on-primary' 
+                                : 'border-outline hover:border-primary hover:bg-primary/10 text-transparent'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[16px] font-bold">check</span>
+                          </button>
+                          <h3 className={`font-headline-sm text-base font-semibold pt-0.5 ${isResolved ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>
+                            {item.title}
+                          </h3>
+                        </div>
+
+                        {item.action_step && (
+                          <p className={`text-body-sm text-xs p-2.5 rounded-lg ml-9 mt-2 ${isResolved ? 'text-on-surface-variant bg-surface-variant/40 line-through' : 'text-on-surface-variant bg-surface-container-low'}`}>
+                            💡 {item.action_step}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between ml-9">
+                        <span className="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+                          {isResolved ? (
+                            <><span className="material-symbols-outlined text-[14px]">done_all</span> {t('mybag.statusResolved', 'Resolved')}</>
+                          ) : (
+                            <><span className="material-symbols-outlined text-[14px]">backpack</span> {t('mybag.statusPending', 'In Bag')}</>
+                          )}
+                        </span>
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          className="text-xs text-error hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          {t('mybag.delete', 'Hapus')}
+                        </button>
+                      </div>
                     </div>
-                    <h3 className="font-headline-sm text-base text-on-surface font-semibold mb-2">{item.title}</h3>
-                    {item.action_step && (
-                      <p className="text-body-sm text-xs text-on-surface-variant bg-surface-container-low p-2 rounded-lg">
-                        💡 {item.action_step}
-                      </p>
-                    )}
+                  );
+                })}
+                
+                {visibleItems.length === 0 && (
+                  <div className="col-span-full py-8 text-center text-on-surface-variant text-sm">
+                    No items found for this filter.
                   </div>
-                  <div className="mt-4 pt-2 border-t border-outline-variant/20 flex items-center justify-between">
-                    <button
-                      onClick={() => changeStatus(item.id, item.status === 'completed' ? 'pending' : 'completed')}
-                      className="text-xs font-bold text-primary hover:underline cursor-pointer"
-                    >
-                      {item.status === 'completed' ? t('mybag.markUnresolved', 'Buka Kembali') : t('mybag.markResolved', 'Tandai Selesai')}
-                    </button>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="text-xs text-error hover:underline cursor-pointer"
-                    >
-                      {t('mybag.delete', 'Hapus')}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
           </div>
         )}

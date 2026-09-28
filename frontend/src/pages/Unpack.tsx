@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PaxChat from '@/components/PaxChat';
 import { useTranslation } from '@/i18n';
@@ -53,6 +53,17 @@ const URGENCY_COLORS: Record<string, { bg: string; text: string; dot: string; ta
 const defaultText =
   "Tomorrow I have a presentation and I haven't finished my slides. My algorithm assignment is also due soon, my group hasn't replied, and I have a meeting tonight. I'm really tired and I don't know where to even begin…";
 
+// Extend Window for SpeechRecognition (vendor-prefixed in some browsers)
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+function getSpeechRecognition(): (new () => SpeechRecognition) | null {
+  const w = window as any;
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
 export default function Unpack() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -69,6 +80,100 @@ export default function Unpack() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // ─── Voice Input (Speech Recognition) ────────────────────────────────────────
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Snapshot of textarea content when voice starts — finals are appended here exactly once.
+  const baseTextRef = useRef('');
+
+  const stopVoice = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+  const startVoice = useCallback(() => {
+    setVoiceError(null);
+
+    const SRConstructor = getSpeechRecognition();
+    if (!SRConstructor) {
+      setVoiceError('Voice input is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+
+    // Snapshot current textarea as the base — everything spoken will be appended after this.
+    baseTextRef.current = text;
+
+    const recognition = new SRConstructor();
+    recognition.lang = 'id-ID'; // Bahasa Indonesia (fallback ke en-US kalau tidak tersedia)
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result && result[0]) {
+          if (result.isFinal) {
+            // Commit this final chunk to baseTextRef exactly once
+            const chunk = result[0].transcript.trim();
+            if (chunk) {
+              baseTextRef.current = baseTextRef.current.trimEnd() + ' ' + chunk;
+            }
+          } else {
+            interim += result[0].transcript;
+          }
+        }
+      }
+      // Display = committed base + live interim preview
+      const display = interim.trim()
+        ? baseTextRef.current.trimEnd() + ' ' + interim.trim()
+        : baseTextRef.current;
+      setText(display.trimStart());
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        setVoiceError('Microphone access denied. Please allow microphone permission.');
+      } else if (event.error !== 'aborted') {
+        setVoiceError(`Voice error: ${event.error}`);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      // When recognition ends, commit the base as the final text (drop any dangling interim)
+      setText(baseTextRef.current.trimStart());
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setVoiceError('Failed to start voice input.');
+    }
+  }, [text]);
+
+  const toggleVoice = useCallback(() => {
+    if (isListening) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
+  }, [isListening, startVoice, stopVoice]);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   const charCount = text.length;
   const items = unpackState.data?.items ?? [];
@@ -256,9 +361,21 @@ export default function Unpack() {
                   </button>
                   <button
                     type="button"
-                    className="text-primary hover:text-on-primary-fixed-variant transition-colors text-label-sm flex items-center gap-1 cursor-pointer"
+                    onClick={toggleVoice}
+                    className={`transition-colors text-label-sm flex items-center gap-1 cursor-pointer ${
+                      isListening
+                        ? 'text-error font-bold'
+                        : 'text-primary hover:text-on-primary-fixed-variant'
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[15px]">mic</span> Voice Dump
+                    {isListening && (
+                      <span className="relative flex h-2.5 w-2.5 mr-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-error" />
+                      </span>
+                    )}
+                    <span className="material-symbols-outlined text-[15px]">{isListening ? 'mic' : 'mic'}</span>
+                    {isListening ? 'Listening…' : 'Voice Dump'}
                   </button>
                 </div>
               </div>
@@ -279,11 +396,17 @@ export default function Unpack() {
                 />
               </div>
 
-              {/* Error message */}
+              {/* Error messages */}
               {unpackState.error && (
                 <div className="mt-space-sm px-space-md py-space-xs bg-error-container rounded-lg flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-on-error-container text-[18px]">error</span>
                   <span className="text-body-sm text-on-error-container">{t(unpackState.error)}</span>
+                </div>
+              )}
+              {voiceError && (
+                <div className="mt-space-sm px-space-md py-space-xs bg-error-container rounded-lg flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-on-error-container text-[18px]">mic_off</span>
+                  <span className="text-body-sm text-on-error-container">{voiceError}</span>
                 </div>
               )}
 
