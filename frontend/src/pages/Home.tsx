@@ -37,126 +37,167 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col w-full bg-brand-cream">
-      {/* ─── SECTION 1 · HERO ─── */}
-      <section className="relative zen-ripples overflow-hidden">
-        <div className="max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop pt-12 pb-20 md:pt-20 md:pb-28">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left Column — Copy */}
-            <div className="flex flex-col gap-6 max-w-xl">
-              <div className="inline-flex items-center gap-2 w-fit px-4 py-1.5 rounded-full border border-brand-border bg-brand-stone/60 text-brand-muted text-xs tracking-widest uppercase font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-olive" />
-                {t('home.heroBadge', 'Student Mental-Health Companion')}
-              </div>
+    <div className="flex flex-col w-full">
+      {/* ─── SECTION 1 · HERO (Freud.ai-inspired) ─── */}
+      <section className="relative overflow-hidden zen-ripples pt-12 md:pt-16 pb-20 lg:pb-28">
+        {/* Concentric ring decorations */}
+        <div className="absolute right-[2%] top-[10%] w-[580px] h-[580px] rounded-full border border-outline-variant/60 pointer-events-none hidden lg:block -z-10" />
+        <div className="absolute right-[-4%] top-[2%] w-[720px] h-[720px] rounded-full border border-outline-variant/30 pointer-events-none hidden lg:block -z-10" />
+        <div className="absolute right-[-10%] top-[-6%] w-[860px] h-[860px] rounded-full border border-outline-variant/20 pointer-events-none hidden lg:block -z-10" />
 
-              <h1 className="text-[clamp(2rem,5vw,3.25rem)] leading-[1.12] font-extrabold text-brand-dark tracking-tight">
-                {t('home.heroLine1', 'Unpack the weight')}{' '}
-                <em className="font-serif italic font-medium text-brand-accent not-italic">
-                  {t('home.heroLine2', 'you carry')}
-                </em>
-                <br />
-                <span className="brush-highlight">
-                  {t('home.heroLine3', 'every single day.')}
-                </span>
-              </h1>
-
-              <p className="text-brand-muted leading-relaxed text-[17px] max-w-md">
-                {t(
-                  'home.heroSubtitle',
-                  'An empathetic AI companion that turns mental clutter into actionable micro-steps — so you breathe easier, one thought at a time.'
-                )}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 mt-2">
-                <Link
-                  to="/unpack"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-brand-dark text-white text-sm font-semibold tracking-wide shadow-[0_4px_0_#0f0c0a] hover:translate-y-[1px] hover:shadow-[0_3px_0_#0f0c0a] active:translate-y-[4px] active:shadow-none transition-all"
-                >
-                  {t('home.ctaPrimary', 'Start Unpacking')}
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </Link>
-                <Link
-                  to="#how-it-works"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-brand-border text-brand-dark text-sm font-semibold hover:bg-brand-stone/60 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  {t('home.ctaSecondary', 'How it works')}
-                </Link>
-              </div>
-
-              <p className="text-xs text-brand-muted/70 mt-1 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px]">lock</span>
-                {t('home.heroConfidence', 'No sign-up required to try · 100% private')}
-              </p>
+        <div className="max-w-[1240px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left Hero Column */}
+          <div className="lg:col-span-6 xl:col-span-6 pt-4 lg:pt-0 max-w-xl">
+            {/* Category Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-fixed/70 border border-outline-variant/60 text-primary text-[12px] font-bold tracking-wider uppercase mb-7 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span>{t('home.heroBadge', 'Student Mental-Health Companion')}</span>
             </div>
 
-            {/* Right Column — Phone Mockup + Rings */}
-            <div className="relative flex items-center justify-center lg:justify-end">
-              {/* Concentric Rings */}
-              <div className="absolute w-[340px] h-[340px] md:w-[420px] md:h-[420px] rounded-full border border-brand-border/40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              <div className="absolute w-[440px] h-[440px] md:w-[540px] md:h-[540px] rounded-full border border-brand-border/25 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              <div className="absolute w-[540px] h-[540px] md:w-[660px] md:h-[660px] rounded-full border border-brand-border/15 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            {/* Headline */}
+            <h1 className="text-[40px] sm:text-[52px] lg:text-[58px] leading-[1.08] font-extrabold tracking-[-0.03em] text-on-surface mb-6">
+              {t('home.heroLine1', 'Empathetic Student Mental Health')}{' '}
+              <br className="hidden sm:inline" />
+              <span className="brush-highlight text-primary relative inline-block">
+                {t('home.heroLine2', 'AI Companion')}
+              </span>
+            </h1>
 
-              {/* Phone */}
-              <div className="relative z-10 w-[260px] sm:w-[280px] bg-white rounded-[2.2rem] shadow-2xl border border-brand-border/50 overflow-hidden">
-                {/* Status Bar */}
-                <div className="flex items-center justify-between px-5 pt-3 pb-1 text-[10px] text-brand-muted">
-                  <span className="font-semibold">9:41</span>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">signal_cellular_alt</span>
-                    <span className="material-symbols-outlined text-[12px]">wifi</span>
-                    <span className="material-symbols-outlined text-[12px]">battery_full</span>
+            {/* Body copy */}
+            <p className="text-base sm:text-lg text-on-surface-variant font-normal leading-relaxed mb-9 max-w-lg">
+              {t(
+                'home.heroSubtitle',
+                'Step into a world of compassionate care and gentle clarity tailored to university life. Put down the heavy backpack — without guilt, pressure, or streaks.'
+              )}
+            </p>
+
+            {/* Dual Pill Actions */}
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                to="#how-it-works"
+                className="px-7 py-3.5 rounded-full border border-outline-variant bg-surface/80 text-on-surface text-[14px] font-bold hover:bg-surface-container transition-all shadow-xs"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                {t('home.ctaSecondary', 'Try Demo')}
+              </Link>
+              <Link
+                to="/unpack"
+                className="inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-primary hover:bg-on-primary-fixed-variant text-on-primary text-[14px] font-bold transition-all shadow-lg shadow-primary/30 group"
+              >
+                <span>{t('home.ctaPrimary', 'Start Unpacking')}</span>
+                <span className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center text-xs group-hover:translate-x-0.5 transition-transform">→</span>
+              </Link>
+            </div>
+
+            {/* Micro confidence text */}
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-on-surface-variant/80">
+              <span className="flex items-center gap-1.5">
+                <span className="text-primary font-bold">✓</span> {t('home.conf1', '100% Anonymous')}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-primary font-bold">✓</span> {t('home.conf2', 'No productivity shame')}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-primary font-bold">✓</span> {t('home.conf3', 'Free for students')}
+              </span>
+            </div>
+          </div>
+
+          {/* Right Hero Column: Phone Mockup */}
+          <div className="lg:col-span-6 xl:col-span-6 flex justify-center lg:justify-end relative">
+            {/* Outer Phone Frame */}
+            <div className="w-full max-w-[370px] sm:max-w-[400px] bg-[#1E1917] p-3 sm:p-3.5 rounded-[46px] shadow-[0_28px_60px_-15px_rgba(35,30,27,0.3)] ring-1 ring-black/10">
+              {/* Phone Glass Screen */}
+              <div className="bg-surface rounded-[38px] overflow-hidden flex flex-col border border-outline-variant/40 relative">
+                {/* Phone Status Bar & Island */}
+                <div className="pt-3 px-7 flex items-center justify-between text-[11px] font-bold text-on-surface/80">
+                  <span>9:41</span>
+                  <div className="w-24 h-4 bg-black rounded-full mx-auto" />
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <span className="material-symbols-outlined text-[13px]">signal_cellular_alt</span>
+                    <span className="material-symbols-outlined text-[13px]">wifi</span>
+                    <span className="material-symbols-outlined text-[13px]">battery_full</span>
                   </div>
                 </div>
 
                 {/* Chat Header */}
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-brand-border/40">
-                  <div className="w-8 h-8 rounded-full bg-brand-olive/20 flex items-center justify-center text-sm">
-                    🎒
+                <div className="px-5 py-3.5 mt-1 border-b border-outline-variant/50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-xs font-bold text-on-surface border border-outline-variant">
+                      <span className="material-symbols-outlined text-[16px] text-on-surface">chevron_left</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-primary" />
+                      <h2 className="text-[15px] font-bold tracking-tight text-on-surface">
+                        {t('home.phonePaxStatus', 'Pax Companion')}
+                      </h2>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-brand-dark leading-tight">Pax</p>
-                    <p className="text-[10px] text-brand-olive">
-                      {t('home.phonePaxStatus', 'Your unpacking buddy')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Chat Bubbles */}
-                <div className="flex flex-col gap-2.5 px-4 py-4 min-h-[240px]">
-                  {/* User bubble */}
-                  <div className="self-end max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-br-md bg-brand-dark text-white text-xs leading-relaxed">
-                    {t('home.chatUser', "I have three exams, can't sleep, and my group project is falling apart...")}
-                  </div>
-
-                  {/* Pax bubble */}
-                  <div className="self-start max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-brand-stone text-brand-dark text-xs leading-relaxed">
-                    {t(
-                      'home.chatPax1',
-                      "I hear you 💛 Let's sort this out. Which one feels heaviest right now?"
-                    )}
-                  </div>
-
-                  {/* Pax follow-up */}
-                  <div className="self-start max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-brand-stone text-brand-dark text-xs leading-relaxed">
-                    <p className="font-semibold text-brand-accent mb-1 text-[11px]">
-                      {t('home.chatMicro', '⚡ Micro-step:')}
-                    </p>
-                    {t('home.chatPax2', 'Open your notes app and write just the essay title. 2 minutes.')}
+                  <div className="flex items-center gap-1 text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[19px] p-1.5 rounded-full">search</span>
+                    <span className="material-symbols-outlined text-[19px] p-1.5 rounded-full">more_horiz</span>
                   </div>
                 </div>
 
-                {/* Input Bar */}
-                <div className="flex items-center gap-2 px-4 py-3 border-t border-brand-border/40">
-                  <div className="flex-1 h-8 rounded-full bg-brand-stone/60 px-3 flex items-center text-[10px] text-brand-muted">
-                    {t('home.chatPlaceholder', 'Type what\'s on your mind...')}
+                {/* Message Stream */}
+                <div className="p-4 sm:p-5 flex flex-col gap-4 text-[13.5px] leading-relaxed">
+                  {/* User message 1 */}
+                  <div className="flex items-start justify-end gap-2">
+                    <div className="max-w-[84%] bg-on-surface text-surface p-3.5 rounded-2xl rounded-tr-sm shadow-sm font-normal">
+                      {t('home.chatUser', "\"I've been feeling constantly overwhelmed with deadlines and lost interest in studying...\"")}
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] text-on-primary shrink-0 mt-1 font-bold">S</div>
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-brand-dark flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-[14px]">arrow_upward</span>
+
+                  {/* Pax reply */}
+                  <div className="flex items-start gap-2">
+                    <div className="w-7 h-7 rounded-full bg-primary-fixed border border-primary-fixed-dim flex items-center justify-center shrink-0 mt-1">
+                      <span className="text-xs">🎒</span>
+                    </div>
+                    <div className="max-w-[88%] space-y-2.5">
+                      <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-tl-sm border border-outline-variant/60 font-normal shadow-xs">
+                        {t('home.chatPax1', "I hear you. You don't have to carry the whole semester at once. Let's unpack just one small pebble together today.")}
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-primary border border-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">
+                          <span>📞</span><span>10-Min Reset</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-primary border border-primary-fixed-dim text-[11px] font-bold tracking-wide uppercase">
+                          <span>📍</span><span>Unpack Thoughts</span>
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* User message 2 */}
+                  <div className="flex items-start justify-end gap-2 pt-1">
+                    <div className="max-w-[82%] bg-on-surface text-surface p-3 rounded-2xl rounded-tr-sm shadow-sm font-normal">
+                      {t('home.chatPax2', "\"Thank you Pax, already feeling a bit of room to breathe.\"")}
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] text-on-primary shrink-0 mt-1 font-bold">S</div>
+                  </div>
+
+                  {/* Pax final */}
+                  <div className="flex items-start gap-2">
+                    <div className="w-7 h-7 rounded-full bg-primary-fixed border border-primary-fixed-dim flex items-center justify-center shrink-0 mt-1">
+                      <span className="text-xs">🎒</span>
+                    </div>
+                    <div className="max-w-[82%] bg-surface-container-lowest text-on-surface p-3 rounded-2xl rounded-tl-sm border border-outline-variant/60 shadow-xs">
+                      {t('home.chatMicro', 'Always here for you. Take a gentle breath. ✨')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Input bar in mockup */}
+                <div className="p-3 bg-surface-container-lowest border-t border-outline-variant/40 flex items-center gap-2">
+                  <div className="flex-1 bg-surface-container/60 rounded-full px-3.5 py-1.5 text-xs text-on-surface-variant flex items-center justify-between">
+                    <span>{t('home.chatPlaceholder', 'Type a messy thought...')}</span>
+                    <span className="material-symbols-outlined text-[16px] text-on-surface-variant">mic</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs shadow-xs">↑</div>
                 </div>
               </div>
             </div>
@@ -164,147 +205,152 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── SECTION 2 · EDITORIAL NARRATIVE ─── */}
-      <section className="bg-white" id="how-it-works">
-        <div className="max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-20 md:py-28">
-          {/* Section Header */}
-          <div className="text-center max-w-2xl mx-auto mb-16 md:mb-20">
-            <p className="text-xs tracking-[0.2em] uppercase text-brand-muted font-semibold mb-3">
-              {t('home.narrativeTag', 'How It Works')}
-            </p>
-            <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold text-brand-dark tracking-tight leading-tight">
-              {t('home.narrativeTitle1', 'Three chapters to a')}{' '}
-              <em className="font-serif italic font-medium text-brand-accent">
-                {t('home.narrativeTitle2', 'lighter mind.')}
-              </em>
+      {/* ─── SECTION 2 · EDITORIAL NARRATIVE FLOW ─── */}
+      <section className="py-20 lg:py-28 border-t border-outline-variant/60 bg-surface" id="how-it-works">
+        <div className="max-w-[1240px] mx-auto px-6 lg:px-12">
+          {/* Left-aligned Section Header */}
+          <div className="max-w-2xl mb-16 lg:mb-20">
+            <span className="text-[12px] font-bold tracking-widest uppercase text-primary block mb-3">
+              {t('home.narrativeTag', 'Designed For Cognitive Calm')}
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-on-surface leading-tight">
+              {t('home.narrativeTitle1', 'How we untangle academic burnout,')}{' '}
+              <br className="hidden sm:inline" />
+              <span className="italic font-normal font-serif text-on-surface-variant">
+                {t('home.narrativeTitle2', 'one quiet moment at a time.')}
+              </span>
             </h2>
           </div>
 
-          {/* Chapter 1 — Mind Dump */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-20 md:mb-28">
-            <div className="order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-border text-brand-muted text-xs tracking-wider uppercase font-semibold mb-4">
-                <span>01</span>
-                <span className="w-1 h-1 rounded-full bg-brand-muted/40" />
-                <span>{t('home.ch1Label', 'The Mind Dump')}</span>
+          {/* Chapter 01: Mind Dump */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center py-12 border-b border-outline-variant/50">
+            <div className="lg:col-span-5 space-y-4">
+              <div className="text-xs font-mono tracking-widest text-on-surface-variant uppercase">
+                {t('home.ch1Label', '01 / Unfiltered Release')}
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-brand-dark mb-4 leading-snug">
-                {t('home.ch1Title', 'Write everything.')}{' '}
-                <span className="text-brand-muted font-normal">
-                  {t('home.ch1TitleSub', 'No filter, no format.')}
-                </span>
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+                {t('home.ch1Title', 'The Mind Dump')}
               </h3>
-              <p className="text-brand-muted leading-relaxed mb-6 text-[15px]">
+              <p className="text-on-surface-variant text-base leading-relaxed">
                 {t(
                   'home.ch1Desc',
-                  "Pour every anxious thought, half-formed deadline, and late-night worry into one place. Bullet points, run-on sentences, voice notes — Pax doesn't judge. The act of externalising is itself the first relief."
+                  "Pour out raw, messy worries without worrying about spelling, bullet points, or structure. Pax catches the emotional spillover and untangles the knot for you without judgement."
                 )}
               </p>
-              <div className="flex items-center gap-2 text-brand-olive text-sm font-semibold">
-                <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                {t('home.ch1Cta', 'Free-form text, no templates needed')}
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  {t('home.ch1Cta', 'Instant cognitive relief • No formatting needed')}
+                </span>
               </div>
             </div>
-            <div className="order-1 lg:order-2 flex justify-center">
-              <div className="w-full max-w-sm rounded-2xl bg-brand-stone/50 border border-brand-border/60 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-3 h-3 rounded-full bg-brand-accent/60" />
-                  <span className="w-3 h-3 rounded-full bg-brand-olive/40" />
-                  <span className="w-3 h-3 rounded-full bg-brand-muted/20" />
+            <div className="lg:col-span-7 bg-surface-container/60 rounded-3xl p-8 border border-outline-variant/60">
+              <div className="space-y-4 font-mono text-sm text-on-surface-variant bg-surface p-6 rounded-2xl border border-outline-variant/40">
+                <div className="text-xs uppercase text-on-surface-variant tracking-widest font-sans font-semibold">
+                  {t('home.ch1DemoLabel', 'Raw student stream:')}
                 </div>
-                <div className="space-y-2 text-sm text-brand-dark/80 font-mono">
-                  <p>😰 {t('home.ch1Demo1', 'chem exam friday havent started')}</p>
-                  <p>😤 {t('home.ch1Demo2', 'group project nobody responding')}</p>
-                  <p>😴 {t('home.ch1Demo3', 'slept 4 hours again')}</p>
-                  <p className="text-brand-muted/50">|</p>
+                <p className="text-on-surface font-sans text-base leading-relaxed italic">
+                  {t('home.ch1Demo1', '"Neuroscience lab report due Thursday, Haven\'t started section 3, my roommate hasn\'t done the dishes in 4 days and I feel so guilty about staying in bed this morning..."')}
+                </p>
+                <div className="h-px bg-outline-variant/60 my-4" />
+                <div className="flex items-center justify-between text-xs font-sans">
+                  <span className="text-primary font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-primary" />
+                    {t('home.ch1DemoResult', 'Pax categorized into: 1 Urgent • 1 Personal • 1 Let Go')}
+                  </span>
+                  <span className="text-on-surface-variant">{t('home.ch1DemoSafe', 'Categorized safely')}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Chapter 2 — Micro Steps */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-20 md:mb-28">
-            <div className="flex justify-center">
-              <div className="w-full max-w-sm rounded-2xl bg-brand-stone/50 border border-brand-border/60 p-6 shadow-sm">
-                <div className="space-y-3">
-                  {[
-                    { icon: '⚡', text: t('home.ch2Step1', 'Open notes → write essay title'), time: '2 min', color: 'bg-brand-accent/15 text-brand-accent' },
-                    { icon: '📱', text: t('home.ch2Step2', 'Text groupmate about Part B'), time: '1 min', color: 'bg-brand-purple/10 text-brand-purple' },
-                    { icon: '🌙', text: t('home.ch2Step3', 'Set bedtime alarm for 11 PM'), time: '30 sec', color: 'bg-brand-olive/15 text-brand-olive' },
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-brand-border/40">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${step.color}`}>
-                        {step.icon}
-                      </span>
-                      <span className="flex-1 text-sm text-brand-dark">{step.text}</span>
-                      <span className="text-[11px] text-brand-muted">{step.time}</span>
-                    </div>
-                  ))}
-                </div>
+          {/* Chapter 02: Start Here Micro-Steps */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center py-12 border-b border-outline-variant/50">
+            <div className="lg:col-span-5 lg:order-2 space-y-4">
+              <div className="text-xs font-mono tracking-widest text-on-surface-variant uppercase">
+                {t('home.ch2Label', '02 / Anti-Paralysis Engine')}
               </div>
-            </div>
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-border text-brand-muted text-xs tracking-wider uppercase font-semibold mb-4">
-                <span>02</span>
-                <span className="w-1 h-1 rounded-full bg-brand-muted/40" />
-                <span>{t('home.ch2Label', 'Start Here — Micro-Steps')}</span>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-brand-dark mb-4 leading-snug">
-                {t('home.ch2Title', 'One tiny action.')}{' '}
-                <span className="text-brand-muted font-normal">
-                  {t('home.ch2TitleSub', 'That\'s all it takes.')}
-                </span>
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+                {t('home.ch2Title', 'Start Here Micro-Steps')}
               </h3>
-              <p className="text-brand-muted leading-relaxed mb-6 text-[15px]">
+              <p className="text-on-surface-variant text-base leading-relaxed">
                 {t(
                   'home.ch2Desc',
-                  'UNPACK\'s AI distills your overwhelm into concrete, 2-minute micro-steps. Not the entire essay — just the title. Not the full conversation — just one text. Small enough to start right now.'
+                  "When everything feels like an emergency, nothing gets started. Pax isolates a single 10-minute micro-action so small it feels effortless to begin."
                 )}
               </p>
-              <div className="flex items-center gap-2 text-brand-purple text-sm font-semibold">
-                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                {t('home.ch2Cta', 'AI-powered, student-tuned suggestions')}
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  {t('home.ch2Cta', 'Bypasses ADHD paralysis • Zero toxic streaks')}
+                </span>
+              </div>
+            </div>
+            <div className="lg:col-span-7 lg:order-1 bg-surface-container/60 rounded-3xl p-8 border border-outline-variant/60">
+              <div className="bg-surface p-6 rounded-2xl border border-outline-variant/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                    {t('home.ch2PebbleLabel', "Today's Single Pebble")}
+                  </span>
+                  <h4 className="text-lg font-bold text-on-surface">
+                    {t('home.ch2Step1', 'Open Lab Report & Write Title + Headings')}
+                  </h4>
+                  <p className="text-xs text-on-surface-variant">
+                    {t('home.ch2StepMeta', 'Estimated effort: 8 minutes • Low friction')}
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-3">
+                  <span className="text-2xl font-mono font-bold text-on-surface">09:59</span>
+                  <Link
+                    to="/unpack"
+                    className="px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold hover:bg-on-primary-fixed-variant transition-colors shadow-md shadow-primary/20"
+                  >
+                    {t('home.ch2BeginBtn', 'Begin Softly')}
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Chapter 3 — Unwind */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-border text-brand-muted text-xs tracking-wider uppercase font-semibold mb-4">
-                <span>03</span>
-                <span className="w-1 h-1 rounded-full bg-brand-muted/40" />
-                <span>{t('home.ch3Label', 'Unwind Sanctuary')}</span>
+          {/* Chapter 03: The Unwind Sanctuary */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center py-12">
+            <div className="lg:col-span-5 space-y-4">
+              <div className="text-xs font-mono tracking-widest text-on-surface-variant uppercase">
+                {t('home.ch3Label', '03 / Sensory Grounding')}
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-brand-dark mb-4 leading-snug">
-                {t('home.ch3Title', 'Breathe, release,')}{' '}
-                <span className="text-brand-muted font-normal">
-                  {t('home.ch3TitleSub', 'feel the lightness.')}
-                </span>
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+                {t('home.ch3Title', 'The Unwind Sanctuary')}
               </h3>
-              <p className="text-brand-muted leading-relaxed mb-6 text-[15px]">
+              <p className="text-on-surface-variant text-base leading-relaxed">
                 {t(
                   'home.ch3Desc',
-                  'After taking action, reward yourself with guided breathing exercises, ambient soundscapes, and gentle affirmations. Your mind earned this quiet moment.'
+                  'When study overwhelm peaks, step into sensory micro-tools: popping bubble wraps, 60-second synchronized box breathing, or listening to quiet rainy library ambient soundscapes.'
                 )}
               </p>
-              <div className="flex items-center gap-2 text-brand-olive text-sm font-semibold">
-                <span className="material-symbols-outlined text-[18px]">spa</span>
-                {t('home.ch3Cta', 'Breathing guides, rain sounds & more')}
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  {t('home.ch3Cta', 'Instant nervous system regulation')}
+                </span>
               </div>
             </div>
-            <div className="order-1 lg:order-2 flex justify-center">
-              <div className="w-full max-w-sm rounded-2xl bg-gradient-to-br from-brand-olive/10 to-brand-stone/40 border border-brand-border/40 p-8 shadow-sm flex flex-col items-center gap-4">
-                <div className="relative w-24 h-24">
-                  <div className="absolute inset-0 rounded-full bg-brand-olive/15 animate-[breatheExpand_4s_ease-in-out_infinite]" />
-                  <div className="absolute inset-2 rounded-full bg-brand-olive/25 animate-[breatheExpand_4s_ease-in-out_infinite_0.5s]" />
-                  <div className="absolute inset-4 rounded-full bg-brand-olive/40 flex items-center justify-center text-2xl animate-[breatheExpand_4s_ease-in-out_infinite_1s]">
-                    🌿
-                  </div>
-                </div>
-                <p className="text-sm text-brand-muted text-center italic font-serif">
-                  {t('home.ch3DemoText', '"Breathe in calm, breathe out tension..."')}
-                </p>
+            <div className="lg:col-span-7 bg-surface-container/60 rounded-3xl p-8 border border-outline-variant/60">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { emoji: '🫧', title: t('home.unwind1Title', 'Pop Bubbles'), desc: t('home.unwind1Desc', 'Tactile tension release') },
+                  { emoji: '🫁', title: t('home.unwind2Title', '60s Breathing'), desc: t('home.unwind2Desc', 'Calms vagus nerve') },
+                  { emoji: '🌧️', title: t('home.unwind3Title', 'Rainy Library'), desc: t('home.unwind3Desc', 'Campus lo-fi soundscape') },
+                ].map((item, i) => (
+                  <Link
+                    key={i}
+                    to="/unwind"
+                    className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/60 text-center space-y-2 shadow-xs hover:border-primary/50 transition-colors"
+                  >
+                    <div className="text-2xl">{item.emoji}</div>
+                    <div className="font-bold text-sm text-on-surface">{item.title}</div>
+                    <div className="text-[11px] text-on-surface-variant">{item.desc}</div>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
@@ -312,41 +358,43 @@ export default function Home() {
       </section>
 
       {/* ─── SECTION 3 · INTERACTIVE SANDBOX ─── */}
-      <section className="bg-brand-cream" id="mind-dump">
-        <div className="max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-16 md:py-24">
-          <div className="rounded-2xl border border-brand-border bg-white p-6 sm:p-10 shadow-sm">
-            <div className="max-w-2xl mx-auto text-center mb-8">
-              <p className="text-xs tracking-[0.2em] uppercase text-brand-muted font-semibold mb-2">
-                {t('home.sandboxTag', 'Try It Now')}
-              </p>
-              <h3 className="text-2xl md:text-3xl font-bold text-brand-dark mb-2">
-                {t('home.sandboxTitle', 'Drop one heavy thought right here.')}
-              </h3>
-              <p className="text-sm text-brand-muted">
-                {t(
-                  'home.sandboxDesc',
-                  "Type whatever is sitting in the back of your neck right now. We won't save it."
-                )}
-              </p>
-            </div>
+      <section className="py-20 lg:py-28 bg-surface-container-high border-t border-outline-variant/60" id="mind-dump">
+        <div className="max-w-[860px] mx-auto px-6 text-center">
+          <span className="text-xs font-bold tracking-widest uppercase text-primary block mb-3">
+            {t('home.sandboxTag', 'Interactive Sandbox')}
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface mb-4">
+            {t('home.sandboxTitle', 'Drop one heavy thought right here.')}
+          </h2>
+          <p className="text-base text-on-surface-variant max-w-lg mx-auto mb-10">
+            {t(
+              'home.sandboxDesc',
+              "Type whatever is sitting in the back of your mind right now. We will never save it without your permission."
+            )}
+          </p>
 
-            <div className="max-w-xl mx-auto">
-              <textarea
-                className="w-full p-4 rounded-xl bg-brand-stone/40 border border-brand-border text-brand-dark placeholder:text-brand-muted/50 text-[15px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-accent/30 resize-none transition-all"
-                placeholder={t(
-                  'home.sandboxPlaceholder',
-                  "e.g. My neuroscience lab report is due tomorrow and I still haven't run the script..."
-                )}
-                rows={3}
-                value={sampleInput}
-                onChange={(e) => {
-                  setSampleInput(e.target.value);
-                  setShowFeedback(false);
-                }}
-              />
+          {/* Inline input area */}
+          <div className="relative bg-surface rounded-3xl p-6 sm:p-8 border border-outline-variant shadow-sm text-left">
+            <textarea
+              className="w-full bg-transparent border-0 focus:ring-0 p-0 text-base sm:text-lg text-on-surface placeholder:text-on-surface-variant/50 resize-none font-sans focus:outline-none"
+              placeholder={t(
+                'home.sandboxPlaceholder',
+                "e.g. My group project partner isn't answering and the pitch deck is due at midnight..."
+              )}
+              rows={3}
+              value={sampleInput}
+              onChange={(e) => {
+                setSampleInput(e.target.value);
+                setShowFeedback(false);
+              }}
+            />
 
-              <div className="flex flex-wrap items-center gap-2 my-4">
-                <span className="text-xs text-brand-muted mr-1">
+            <div className="h-px bg-outline-variant/60 my-5" />
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              {/* Quick Tag Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-on-surface-variant mr-1 font-medium">
                   {t('home.feelsLike', 'Feels like:')}
                 </span>
                 {tagPills.map(({ key, emoji, label }) => {
@@ -358,8 +406,8 @@ export default function Home() {
                       onClick={() => selectTag(full)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
                         selectedTags.has(full)
-                          ? 'bg-brand-accent/15 text-brand-accent border border-brand-accent/30'
-                          : 'bg-brand-stone/60 text-brand-muted border border-brand-border hover:bg-brand-stone'
+                          ? 'bg-primary/15 text-primary border border-primary/30'
+                          : 'bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/40'
                       }`}
                     >
                       {full}
@@ -368,120 +416,123 @@ export default function Home() {
                 })}
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              {/* Action button */}
+              <button
+                onClick={handleMiniUnpack}
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary text-on-primary hover:bg-on-primary-fixed-variant text-[13px] font-bold transition-all shrink-0 shadow-md shadow-primary/25 cursor-pointer"
+              >
+                <span>{t('home.btnUnpackThought', 'Unpack Thought')}</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            {/* Dynamic Response Slot */}
+            {showFeedback && (
+              <div className="mt-6 pt-6 border-t border-outline-variant/60 space-y-3 animate-[fadeIn_0.3s_ease-out]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-brand-olive" />
-                  <span className="text-[11px] text-brand-muted">
-                    {t('home.privateSandbox', '100% private sandbox')}
+                  <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                    {t('home.paxFeedbackTitle', 'Pax unpacked this for you:')}
                   </span>
                 </div>
-                <button
-                  onClick={handleMiniUnpack}
-                  className="px-5 py-2.5 rounded-full bg-brand-dark text-white text-sm font-semibold shadow-[0_3px_0_#0f0c0a] hover:translate-y-[1px] hover:shadow-[0_2px_0_#0f0c0a] active:translate-y-[3px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>{t('home.btnUnpackThought', 'Unpack Thought')}</span>
-                  <span className="material-symbols-outlined text-[16px]">psychology</span>
-                </button>
+                <p className="text-base text-on-surface leading-relaxed font-sans italic bg-primary-fixed/40 p-4 rounded-2xl border border-primary-fixed-dim/80">
+                  {t(
+                    'home.paxFeedbackBody',
+                    '"Take a gentle breath. You can\'t control their response time, but you can control your own peace. Your only 10-minute micro-step: write a short outline for slide 1 and take a 5-minute warm water break."'
+                  )}
+                </p>
               </div>
+            )}
+          </div>
 
-              {showFeedback && (
-                <div className="mt-5 p-4 rounded-xl bg-brand-stone/50 border border-brand-border text-brand-dark animate-[fadeIn_0.3s_ease-out]">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">🎒</span>
-                    <div>
-                      <p className="text-sm font-bold text-brand-accent">
-                        {t('home.paxFeedbackTitle', 'Pax unpacked this for you:')}
-                      </p>
-                      <p className="text-sm text-brand-dark/80 mt-1 leading-relaxed">
-                        {t(
-                          'home.paxFeedbackBody',
-                          '"Breathe. Don\'t worry about the entire report right now. Your only 2-minute micro-step: Open the file and write the title heading. That\'s all for now."'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="mt-4 text-xs text-on-surface-variant flex items-center justify-center gap-4">
+            <span>🔒 {t('home.privateSandbox', '100% Client-side sandbox')}</span>
+            <span>•</span>
+            <span>{t('home.heroConfidence', 'Zero account needed to test')}</span>
           </div>
         </div>
       </section>
 
-      {/* ─── SECTION 4 · SOCIAL PROOF ─── */}
-      <section className="bg-white">
-        <div className="max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-16 md:py-24">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="mb-8">
-              <span className="text-4xl">💬</span>
-            </div>
-            <blockquote className="text-[clamp(1.25rem,3vw,1.75rem)] font-serif italic text-brand-dark leading-relaxed mb-6">
-              {t(
-                'home.testimonial',
-                '"I used to spiral at 2 AM before exams. Now I dump everything into UNPACK, pick one micro-step, and actually sleep. It changed my semester."'
-              )}
-            </blockquote>
-            <p className="text-sm text-brand-muted font-semibold">
-              {t('home.testimonialAuthor', '— Rina, 3rd year Psychology student')}
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 mt-12 pt-8 border-t border-brand-border">
-              <div className="text-center">
-                <p className="text-3xl md:text-4xl font-extrabold text-brand-dark">14,200+</p>
-                <p className="text-xs text-brand-muted mt-1">
-                  {t('home.stat1', 'thoughts unpacked')}
-                </p>
-              </div>
-              <div className="w-px h-10 bg-brand-border hidden md:block" />
-              <div className="text-center">
-                <p className="text-3xl md:text-4xl font-extrabold text-brand-dark">88%</p>
-                <p className="text-xs text-brand-muted mt-1">
-                  {t('home.stat2', 'felt calmer after first session')}
-                </p>
-              </div>
-              <div className="w-px h-10 bg-brand-border hidden md:block" />
-              <div className="text-center">
-                <p className="text-3xl md:text-4xl font-extrabold text-brand-dark">2 min</p>
-                <p className="text-xs text-brand-muted mt-1">
-                  {t('home.stat3', 'average time to first micro-step')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 5 · FINAL CTA ─── */}
-      <section className="bg-brand-cream">
-        <div className="max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-20 md:py-28">
-          <div className="relative rounded-2xl bg-brand-stone border border-brand-border p-10 sm:p-16 text-center overflow-hidden">
-            {/* Subtle radial glow */}
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(226,123,88,0.08)_0%,transparent_70%)]" />
-
-            <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-brand-dark text-white flex items-center justify-center text-3xl shadow-lg mb-6 transform -rotate-3 hover:rotate-0 transition-transform">
-                🎒
-              </div>
-              <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-extrabold text-brand-dark mb-4 leading-tight">
-                {t('home.closingTitle', "Ready to put down what you've been carrying?")}
-              </h2>
-              <p className="text-brand-muted leading-relaxed mb-8 text-[15px]">
+      {/* ─── SECTION 4 · EDITORIAL SOCIAL PROOF ─── */}
+      <section className="py-20 lg:py-24 border-t border-outline-variant/60 bg-surface">
+        <div className="max-w-[1100px] mx-auto px-6 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-8">
+              <span className="text-xs font-bold tracking-widest uppercase text-primary block mb-4">
+                {t('home.proofTag', 'Real Campus Impact')}
+              </span>
+              <blockquote className="text-2xl sm:text-3xl lg:text-[34px] font-serif italic text-on-surface leading-snug">
                 {t(
-                  'home.closingDesc',
-                  "Take five quiet minutes. Empty the mental backpack and let's see what is actually worth picking back up."
+                  'home.testimonial',
+                  '"Pax replaced the constant low-hum panic of exam week with actual quiet. It\'s the first student mental health tool that doesn\'t demand I be more productive."'
                 )}
-              </p>
-              <Link
-                to="/unpack"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-brand-dark text-white font-semibold shadow-[0_4px_0_#0f0c0a] hover:translate-y-[1px] hover:shadow-[0_3px_0_#0f0c0a] active:translate-y-[4px] active:shadow-none transition-all"
-              >
-                <span>{t('home.ctaStart', 'Start Your First Mind Dump')}</span>
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </Link>
-              <p className="text-[11px] text-brand-muted/60 mt-6 tracking-wide">
-                {t('home.footerTag', 'Always calm · Never algorithmic · Made with care for students')}
-              </p>
+              </blockquote>
+              <div className="mt-6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-fixed border border-primary-fixed-dim flex items-center justify-center font-bold text-xs text-primary">MC</div>
+                <div>
+                  <p className="text-sm font-bold text-on-surface">
+                    {t('home.testimonialName', 'Maya Chen')}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    {t('home.testimonialAuthor', '3rd Year Cognitive Science, UC Berkeley')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-4 border-l-0 lg:border-l border-outline-variant/70 lg:pl-10 space-y-6">
+              <div>
+                <div className="text-4xl font-extrabold text-on-surface tracking-tight">
+                  {t('home.stat1Value', '14,200+')}
+                </div>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  {t('home.stat1', 'Heavy thoughts unpacked by university students this semester.')}
+                </p>
+              </div>
+              <div>
+                <div className="text-4xl font-extrabold text-on-surface tracking-tight">
+                  {t('home.stat2Value', '88%')}
+                </div>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  {t('home.stat2', 'Report feeling an immediate drop in panic after a single 10-minute micro-step.')}
+                </p>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 5 · FINAL GENTLE CTA ─── */}
+      <section className="py-20 bg-surface-container/40 border-t border-outline-variant/60 text-center">
+        <div className="max-w-[700px] mx-auto px-6">
+          <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-primary to-[#8b5cf6] text-on-primary text-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
+            🎒
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface mb-4">
+            {t('home.closingTitle', "Ready to put down what you've been carrying?")}
+          </h2>
+          <p className="text-on-surface-variant text-base sm:text-lg mb-8 max-w-md mx-auto leading-relaxed">
+            {t(
+              'home.closingDesc',
+              'Take five quiet minutes right now. Unpack the backpack and breathe freely.'
+            )}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link
+              to="/unpack"
+              className="px-8 py-3.5 rounded-full bg-primary hover:bg-on-primary-fixed-variant text-on-primary text-[14px] font-bold transition-all shadow-lg shadow-primary/30"
+            >
+              {t('home.ctaStart', 'Start Your First Mind Dump →')}
+            </Link>
+            <a
+              href="#"
+              className="px-6 py-3.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface text-[14px] font-bold hover:bg-surface-container transition-all shadow-xs"
+            >
+              {t('home.ctaDiscord', 'Join Student Discord')}
+            </a>
+          </div>
+          <p className="text-xs text-on-surface-variant mt-8 font-medium">
+            {t('home.footerTag', 'Always calm · Never algorithmic · Free for all enrolled university students')}
+          </p>
         </div>
       </section>
     </div>
