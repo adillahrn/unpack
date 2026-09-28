@@ -49,10 +49,7 @@ export default function Home() {
           {/* Left Hero Column */}
           <div className="lg:col-span-6 xl:col-span-6 pt-4 lg:pt-0 max-w-xl">
             {/* Category Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-fixed/70 border border-outline-variant/60 text-primary text-[12px] font-bold tracking-wider uppercase mb-7 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span>{t('home.heroBadge', 'Student Mental-Health Companion')}</span>
-            </div>
+            
 
             {/* Headline */}
             <h1 className="text-[40px] sm:text-[52px] lg:text-[58px] leading-[1.08] font-extrabold tracking-[-0.03em] text-on-surface mb-6">
@@ -73,16 +70,7 @@ export default function Home() {
 
             {/* Dual Pill Actions */}
             <div className="flex flex-wrap items-center gap-4">
-              <Link
-                to="#how-it-works"
-                className="px-7 py-3.5 rounded-full border border-outline-variant bg-surface/80 text-on-surface text-[14px] font-bold hover:bg-surface-container transition-all shadow-xs"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                {t('home.ctaSecondary', 'Try Demo')}
-              </Link>
+              
               <Link
                 to="/unpack"
                 className="inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-primary hover:bg-on-primary-fixed-variant text-on-primary text-[14px] font-bold transition-all shadow-lg shadow-primary/30 group"
@@ -92,18 +80,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Micro confidence text */}
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-on-surface-variant/80">
-              <span className="flex items-center gap-1.5">
-                <span className="text-primary font-bold">✓</span> {t('home.conf1', '100% Anonymous')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-primary font-bold">✓</span> {t('home.conf2', 'No productivity shame')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-primary font-bold">✓</span> {t('home.conf3', 'Free for students')}
-              </span>
-            </div>
+            
           </div>
 
           {/* Right Hero Column: Phone Mockup */}
@@ -444,62 +421,9 @@ export default function Home() {
               </div>
             )}
           </div>
-
-          <div className="mt-4 text-xs text-on-surface-variant flex items-center justify-center gap-4">
-            <span>🔒 {t('home.privateSandbox', '100% Client-side sandbox')}</span>
-            <span>•</span>
-            <span>{t('home.heroConfidence', 'Zero account needed to test')}</span>
-          </div>
         </div>
       </section>
 
-      {/* ─── SECTION 4 · EDITORIAL SOCIAL PROOF ─── */}
-      <section className="py-20 lg:py-24 border-t border-outline-variant/60 bg-surface">
-        <div className="max-w-[1100px] mx-auto px-6 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-8">
-              <span className="text-xs font-bold tracking-widest uppercase text-primary block mb-4">
-                {t('home.proofTag', 'Real Campus Impact')}
-              </span>
-              <blockquote className="text-2xl sm:text-3xl lg:text-[34px] font-serif italic text-on-surface leading-snug">
-                {t(
-                  'home.testimonial',
-                  '"Pax replaced the constant low-hum panic of exam week with actual quiet. It\'s the first student mental health tool that doesn\'t demand I be more productive."'
-                )}
-              </blockquote>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-fixed border border-primary-fixed-dim flex items-center justify-center font-bold text-xs text-primary">MC</div>
-                <div>
-                  <p className="text-sm font-bold text-on-surface">
-                    {t('home.testimonialName', 'Maya Chen')}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {t('home.testimonialAuthor', '3rd Year Cognitive Science, UC Berkeley')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-4 border-l-0 lg:border-l border-outline-variant/70 lg:pl-10 space-y-6">
-              <div>
-                <div className="text-4xl font-extrabold text-on-surface tracking-tight">
-                  {t('home.stat1Value', '14,200+')}
-                </div>
-                <p className="text-sm text-on-surface-variant mt-1">
-                  {t('home.stat1', 'Heavy thoughts unpacked by university students this semester.')}
-                </p>
-              </div>
-              <div>
-                <div className="text-4xl font-extrabold text-on-surface tracking-tight">
-                  {t('home.stat2Value', '88%')}
-                </div>
-                <p className="text-sm text-on-surface-variant mt-1">
-                  {t('home.stat2', 'Report feeling an immediate drop in panic after a single 10-minute micro-step.')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ─── SECTION 5 · FINAL GENTLE CTA ─── */}
       <section className="py-20 bg-surface-container/40 border-t border-outline-variant/60 text-center">
@@ -523,16 +447,8 @@ export default function Home() {
             >
               {t('home.ctaStart', 'Start Your First Mind Dump →')}
             </Link>
-            <a
-              href="#"
-              className="px-6 py-3.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface text-[14px] font-bold hover:bg-surface-container transition-all shadow-xs"
-            >
-              {t('home.ctaDiscord', 'Join Student Discord')}
-            </a>
+            
           </div>
-          <p className="text-xs text-on-surface-variant mt-8 font-medium">
-            {t('home.footerTag', 'Always calm · Never algorithmic · Free for all enrolled university students')}
-          </p>
         </div>
       </section>
     </div>
