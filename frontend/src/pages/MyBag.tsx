@@ -266,12 +266,6 @@ export default function MyBag() {
         <div className="relative bg-surface-container-low rounded-xl p-space-md md:p-space-lg shadow-sm overflow-hidden mb-space-lg">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-space-md">
             <div className="space-y-space-xs max-w-2xl">
-              <div className="inline-flex items-center gap-space-xs bg-surface-container px-space-md py-1 rounded-full shadow-sm">
-                <span className="text-sm leading-none">🎒</span>
-                <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  {capacityPercent >= 100 ? t('mybag.capacityFull', 'Bag Full!') : t('mybag.capacityOk', 'Bag Capacity Safe')}: {capacityPercent}%
-                </span>
-              </div>
               <h1 className="font-display-lg text-display-lg text-on-surface tracking-tight">
                 {t('mybag.title', 'My Bag')}
               </h1>

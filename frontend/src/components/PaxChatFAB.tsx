@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import PaxChat from '@/components/PaxChat';
 
 /**
  * Floating Action Button that opens the Pax AI chatbot.
- * Rendered in AppLayout so it appears on every page when the user is logged in.
+ * Rendered in AppLayout so it appears on every page.
+ * If user is not logged in, clicking redirects to /login.
  *
  * Positioning:
  *   - Mobile: bottom-20 to clear the mobile bottom-nav bar (z-50)
@@ -14,17 +16,35 @@ import PaxChat from '@/components/PaxChat';
  */
 export default function PaxChatFAB() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Only show for logged-in users
-  if (!session) return null;
+  useEffect(() => {
+    const handleOpen = () => {
+      if (session) {
+        setIsOpen(true);
+      } else {
+        navigate('/login');
+      }
+    };
+    window.addEventListener('open-pax-chat', handleOpen);
+    return () => window.removeEventListener('open-pax-chat', handleOpen);
+  }, [session, navigate]);
+
+  const handleClick = () => {
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <>
       {/* Floating Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleClick}
         aria-label={isOpen ? 'Close Pax Chat' : 'Open Pax Chat'}
         className={`
           fixed right-5 z-[60]
@@ -58,7 +78,7 @@ export default function PaxChatFAB() {
       </button>
 
       {/* Pax Chat overlay */}
-      {isOpen && <PaxChat onClose={() => setIsOpen(false)} />}
+      {session && isOpen && <PaxChat onClose={() => setIsOpen(false)} />}
     </>
   );
 }

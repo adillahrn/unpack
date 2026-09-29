@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PaxChat from '@/components/PaxChat';
 import { useTranslation } from '@/i18n';
 import { supabase } from '@/lib/supabaseClient';
@@ -75,7 +75,15 @@ function getSpeechRecognition(): (new () => SpeechRecognition) | null {
 export default function Unpack() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [text, setText] = useState(defaultText);
+  const location = useLocation();
+  const locationState = location.state as { initialText?: string } | null;
+  const [text, setText] = useState(locationState?.initialText || defaultText);
+
+  useEffect(() => {
+    if (locationState?.initialText) {
+      setText(locationState.initialText);
+    }
+  }, [locationState?.initialText]);
 
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [isBreathing, setIsBreathing] = useState(false);
@@ -734,14 +742,14 @@ function BaggageCard({
       </div>
 
       {/* PAX Note */}
-      <div className="bg-amber-50/80 rounded-lg p-space-sm mt-space-sm relative">
+      <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/50 rounded-lg p-space-sm mt-space-sm relative">
         <div className="flex items-start gap-1.5">
-          <span className="material-symbols-outlined text-tertiary text-[16px] shrink-0 mt-0.5">
+          <span className="material-symbols-outlined text-amber-700 dark:text-amber-400 text-[16px] shrink-0 mt-0.5">
             lightbulb
           </span>
 
-          <p className="text-body-sm text-on-surface leading-tight">
-            <strong className="text-tertiary">
+          <p className="text-body-sm text-amber-950 dark:text-amber-100 leading-tight">
+            <strong className="text-amber-900 dark:text-amber-200 font-bold">
               {t('unpack.results.paxNote')}
             </strong>{' '}
             "{item.actionStep}"

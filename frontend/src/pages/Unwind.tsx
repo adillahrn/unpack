@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from '@/i18n';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ModalId = 'bubble' | 'breathe' | 'rain' | 'float' | 'plant' | 'action' | null;
@@ -809,6 +810,7 @@ function ActionModal({ item, onStatusChange, onClose }: ActionModalProps) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Unwind() {
+  const { t } = useTranslation();
   const [openModal, setOpenModal]     = useState<ModalId>(null);
   const [activeSound, setActiveSound] = useState<SoundKey>('rain');
   const [playing, setPlaying]         = useState(false);
@@ -1083,9 +1085,11 @@ export default function Unwind() {
             {!loadingItems && !itemsError && items.length === 0 && (
               <div className="bg-surface-container-lowest rounded-2xl p-8 text-center shadow-[0_2px_8px_-2px_rgba(41,37,36,0.05)]">
                 <span className="material-symbols-outlined text-[40px] text-outline/50 mb-3">inventory_2</span>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">Your bag is empty</h3>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">
+                  {t('unwind.emptyBagTitle', 'Your bag is empty')}
+                </h3>
                 <p className="text-body-md text-on-surface-variant max-w-md mx-auto">
-                  Head to Unpack to dump your thoughts and sort them into pebbles first. Then come back here to start chipping away.
+                  {t('unwind.emptyBagDesc', 'Head to Unpack to dump your thoughts and sort them into pebbles first. Then come back here to start chipping away.')}
                 </p>
               </div>
             )}
@@ -1098,7 +1102,7 @@ export default function Unwind() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-label-sm font-bold uppercase tracking-wider">
-                        Today's Single Pebble
+                        {t('unwind.singlePebbleBadge', "Today's Single Pebble")}
                       </span>
                     </div>
 
@@ -1107,7 +1111,7 @@ export default function Unwind() {
                     </h3>
                     <p className="text-body-sm text-on-surface-variant flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px] text-tertiary">timer</span>
-                      Estimated effort: {ms.duration} minutes • Low friction
+                      {t('unwind.estimatedEffort', 'Estimated effort:')} {ms.duration} {t('unwind.minutes', 'minutes')} • {t('unwind.lowFriction', 'Low friction')}
                     </p>
                   </div>
 
@@ -1118,18 +1122,19 @@ export default function Unwind() {
                       onClick={startAction}
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary text-label-lg font-bold shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
                     >
-                      Begin Softly
+                      {t('unwind.beginSoftly', 'Begin Softly')}
                     </button>
                   </div>
                 </div>
 
                 {/* Micro step hint */}
                 <div className="mt-5 pt-5 border-t border-surface-variant/30">
-                  <div className="flex items-start gap-2 bg-amber-50/80 rounded-xl p-4">
-                    <span className="material-symbols-outlined text-tertiary text-[18px] shrink-0 mt-0.5">lightbulb</span>
+                  <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4">
+                    <span className="material-symbols-outlined text-amber-700 dark:text-amber-400 text-[18px] shrink-0 mt-0.5">lightbulb</span>
                     <div>
-                      <p className="text-body-sm text-on-surface leading-relaxed">
-                        <strong className="text-tertiary">Next tiny move:</strong> {ms.text}
+                      <p className="text-body-sm text-amber-950 dark:text-amber-100 leading-relaxed">
+                        <strong className="text-amber-900 dark:text-amber-200 font-bold">{t('unwind.nextTinyMove', 'Next tiny move:')}</strong>{' '}
+                        {ms.text}
                       </p>
                     </div>
                   </div>
@@ -1139,7 +1144,7 @@ export default function Unwind() {
                 {items.length > 1 && (
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-label-sm text-on-surface-variant">
-                      {CATEGORY_EMOJI[bagItem.category] ?? '📌'} {itemIndex + 1} of {items.length} pebbles
+                      {CATEGORY_EMOJI[bagItem.category] ?? '📌'} {itemIndex + 1} {t('unwind.of', 'of')} {items.length} {t('unwind.pebblesCount', 'pebbles')}
                     </span>
                     <div className="flex items-center gap-2">
                       <button

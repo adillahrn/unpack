@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useTranslation } from '@/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -17,6 +17,8 @@ function GoogleIcon() {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as { from?: string; initialText?: string } | null;
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +49,8 @@ export default function Login() {
     }
 
     if (data.session) {
-      navigate('/unpack');
+      const destination = locationState?.from || '/unpack';
+      navigate(destination, { state: { initialText: locationState?.initialText } });
     }
   };
 
