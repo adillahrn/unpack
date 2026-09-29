@@ -287,7 +287,23 @@ export default function Unpack() {
         status: 'pending',
       }));
 
-      const { error: dbError } = await supabase.from('baggage_items').insert(insertRows);
+      let { error: dbError } = await supabase.from('baggage_items').insert(insertRows);
+
+      // Jika kolom duration_minutes belum ada di database Supabase (migration belum dijalankan / schema cache),
+      // retry insert tanpa duration_minutes agar user tetap bisa menyimpan item tanpa error.
+      if (dbError && (dbError.message?.includes('duration_minutes') || dbError.message?.includes('schema cache'))) {
+        const fallbackRows = selectedItems.map((item) => ({
+          unload_id: unpackState.data!.unloadId,
+          user_id: user.id,
+          title: item.title,
+          category: item.category,
+          urgency: item.urgency,
+          action_step: item.actionStep,
+          status: 'pending',
+        }));
+        const retryResult = await supabase.from('baggage_items').insert(fallbackRows);
+        dbError = retryResult.error;
+      }
 
       if (dbError) {
         console.error('Save to bag error:', dbError);
