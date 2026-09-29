@@ -15,6 +15,7 @@ interface BaggageItem {
   category: 'academic' | 'deadline' | 'social' | 'personal' | 'health' | 'financial' | 'other'
   urgency: 'high' | 'medium' | 'low'
   actionStep: string
+  estimatedMinutes: number
 }
 
 interface UnpackResponse {
@@ -43,11 +44,14 @@ Your ONLY job is to:
 1. Extract distinct concerns/tasks/thoughts from the user's mind dump
 2. Categorize each item (academic, deadline, social, personal, health, financial, other)
 3. Estimate urgency (high, medium, low)
-4. Provide one small, concrete action step per item (something doable in under 5 minutes)
+4. Provide one small, concrete action step per item (something doable in under 15 minutes)
+5. Estimate a realistic duration in minutes (integer between 3 and 30) to complete this action step (e.g. 5, 10, 15)
 
-Action step guidelines:
-- Must be specific and immediately actionable
-- Good: "Open the slide deck and write the title slide"
+Action step & estimated duration guidelines:
+- Action step must be specific, gentle, and immediately actionable
+- estimatedMinutes must be a realistic integer number of minutes (between 3 and 30) tailored to the action step
+- Good: "Open the slide deck and write the title outline" -> estimatedMinutes: 10
+- Good: "Send a quick check-in text to your teammate" -> estimatedMinutes: 3
 - Bad: "Work on your presentation" (too vague)
 
 Respond ONLY with valid JSON in this exact format, no markdown fences, no extra text:
@@ -57,7 +61,8 @@ Respond ONLY with valid JSON in this exact format, no markdown fences, no extra 
       "title": "short descriptive title",
       "category": "academic|deadline|social|personal|health|financial|other",
       "urgency": "high|medium|low",
-      "actionStep": "one small concrete step to take right now"
+      "actionStep": "one small concrete step to take right now",
+      "estimatedMinutes": 10
     }
   ]
 }`
@@ -119,6 +124,18 @@ function validateItems(parsed: unknown): UnpackResponse {
         )
       }
 
+      let estimatedMinutes = 10
+      if (typeof it.estimatedMinutes === 'number' && !isNaN(it.estimatedMinutes)) {
+        estimatedMinutes = Math.round(it.estimatedMinutes)
+      } else if (typeof it.estimatedMinutes === 'string') {
+        const parsedNum = parseInt(it.estimatedMinutes, 10)
+        if (!isNaN(parsedNum)) {
+          estimatedMinutes = parsedNum
+        }
+      }
+      // Clamp to realistic range 3 to 30 minutes
+      estimatedMinutes = Math.max(3, Math.min(30, estimatedMinutes))
+
       return {
         title: it.title.trim().slice(0, 100),
         category:
@@ -127,6 +144,7 @@ function validateItems(parsed: unknown): UnpackResponse {
           it.urgency as BaggageItem['urgency'],
         actionStep:
           it.actionStep.trim().slice(0, 200),
+        estimatedMinutes,
       }
     },
   )

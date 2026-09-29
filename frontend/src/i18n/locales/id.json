@@ -191,6 +191,7 @@
   "mybag.sideMesh": "Kantong Samping (Sosial/Pesan)",
   "mybag.frontPouch": "Kantong Depan (Self-Care)",
   "mybag.packItem": "Tambah Item Baru",
+  "mybag.quickResets": "Reset Singkat",
 
   "unwind.title": "Ruang Unwind",
   "unwind.subtitle": "Ambil napas sejenak, rileks, dan tenangkan pikiranmu",
@@ -221,6 +222,10 @@
   "unwind.emptyBagTitle": "Tasmu masih kosong",
   "unwind.emptyBagDesc": "Pergi ke Unpack untuk mencurahkan pikiranmu dan mengurainya menjadi pebble terlebih dahulu. Lalu kembali ke sini untuk mulai menyelesaikannya perlahan.",
   "unwind.startSession": "Mulai Sesi",
+  "unwind.startFocus": "Mulai Fokus",
+  "unwind.resume": "Lanjutkan",
+  "unwind.finishEarly": "Selesai Lebih Awal",
+  "unwind.readyToStart": "Siap saat kamu siap • Sesuaikan dengan ±1 mnt",
   "unwind.completeAction": "Tandai Selesai",
   "unwind.breathingTitle": "Latihan Napas Pax",
   "unwind.startBreathing": "Mulai Sesi Napas",

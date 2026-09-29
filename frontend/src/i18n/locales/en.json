@@ -191,6 +191,7 @@
   "mybag.sideMesh": "Side Mesh (Social/Messages)",
   "mybag.frontPouch": "Front Pouch (Self-Care)",
   "mybag.packItem": "Pack New Item",
+  "mybag.quickResets": "Quick Resets",
 
   "unwind.title": "Unwind Space",
   "unwind.subtitle": "Take a breath, relax, and calm your mind",
@@ -221,6 +222,10 @@
   "unwind.emptyBagTitle": "Your bag is empty",
   "unwind.emptyBagDesc": "Head to Unpack to dump your thoughts and sort them into pebbles first. Then come back here to start chipping away.",
   "unwind.startSession": "Start Session",
+  "unwind.startFocus": "Start Focus",
+  "unwind.resume": "Resume",
+  "unwind.finishEarly": "Finish Early",
+  "unwind.readyToStart": "Ready when you are • Adjust with ±1 min",
   "unwind.completeAction": "Mark as Completed",
   "unwind.breathingTitle": "Pax Breathing Exercise",
   "unwind.startBreathing": "Start Breathing Session",

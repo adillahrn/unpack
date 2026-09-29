@@ -21,6 +21,7 @@ interface DBBaggageItem {
   category: Category;
   urgency: Urgency;
   action_step: string | null;
+  duration_minutes?: number | null;
   status: Status;
   created_at: string;
 }
@@ -274,13 +275,22 @@ export default function MyBag() {
               </p>
             </div>
 
-            <div className="flex items-center gap-space-sm self-start md:self-center">
+            <div className="flex flex-wrap items-center gap-space-sm self-start md:self-center">
               <Link
                 to="/unpack"
                 className="inline-flex items-center gap-space-xs px-space-lg py-space-sm rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-[0_3px_0_#5516be] hover:translate-y-[1px] cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>{t('mybag.packItem', 'Pack New Item')}</span>
+              </Link>
+
+              <Link
+                to="/unwind"
+                state={{ scrollTo: 'quick-resets' }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-outline-variant/60 bg-surface-container/60 hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-[13px] transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px] text-primary">spa</span>
+                <span>{t('mybag.quickResets', 'Quick Resets')}</span>
               </Link>
             </div>
           </div>

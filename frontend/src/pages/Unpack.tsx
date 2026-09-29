@@ -283,6 +283,7 @@ export default function Unpack() {
         category: item.category,
         urgency: item.urgency,
         action_step: item.actionStep,
+        duration_minutes: item.estimatedMinutes ?? 10,
         status: 'pending',
       }));
 
@@ -331,16 +332,6 @@ export default function Unpack() {
   return (
     <div className="flex flex-col w-full">
       <div className="w-full max-w-[1180px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-md">
-        {/* Top Step Bar & Overline */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
-          <div className="inline-flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full shadow-sm w-fit">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-label-md text-primary font-bold uppercase tracking-wider">Step 01 of 02</span>
-            <span className="text-outline text-label-md">•</span>
-            <span className="text-label-md text-on-surface-variant">Brain Dump &amp; Sorting</span>
-          </div>
-        </div>
-
         {/* Main Section Header */}
         <div className="relative mb-space-xl">
           <div className="max-w-3xl">

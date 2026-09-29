@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useTranslation } from '@/i18n';
 
@@ -16,6 +16,7 @@ interface DBBaggageItem {
   category: string;
   urgency: 'high' | 'medium' | 'low';
   action_step: string | null;
+  duration_minutes?: number | null;
   status: BagStatus;
   created_at?: string;
 }
@@ -78,14 +79,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 function getMicroStep(item: DBBaggageItem): { text: string; duration: number } {
+  const itemDuration = item.duration_minutes && item.duration_minutes > 0 ? item.duration_minutes : 10;
   const step = item.action_step?.trim();
-  if (step && !PLACEHOLDER_STEPS.includes(step)) return { text: step, duration: 10 };
-  if (item.category === 'academic')  return { text: 'Open the file and identify the easiest part to start with.', duration: 10 };
-  if (item.category === 'deadline')  return { text: 'Write down the one thing you must remember for this deadline.', duration: 5 };
-  if (item.category === 'social')    return { text: 'Send one short message to check in with whoever is involved.', duration: 5 };
-  if (item.category === 'health')    return { text: 'Do one small thing for your body: water, stretch, or a short walk.', duration: 5 };
-  if (item.category === 'financial') return { text: 'Open your banking app and just look at the number. No decisions yet.', duration: 5 };
-  return { text: 'Write down three things you remember about this task.', duration: 10 };
+  if (step && !PLACEHOLDER_STEPS.includes(step)) return { text: step, duration: itemDuration };
+  if (item.category === 'academic')  return { text: 'Open the file and identify the easiest part to start with.', duration: itemDuration };
+  if (item.category === 'deadline')  return { text: 'Write down the one thing you must remember for this deadline.', duration: item.duration_minutes && item.duration_minutes > 0 ? item.duration_minutes : 5 };
+  if (item.category === 'social')    return { text: 'Send one short message to check in with whoever is involved.', duration: item.duration_minutes && item.duration_minutes > 0 ? item.duration_minutes : 5 };
+  if (item.category === 'health')    return { text: 'Do one small thing for your body: water, stretch, or a short walk.', duration: item.duration_minutes && item.duration_minutes > 0 ? item.duration_minutes : 5 };
+  if (item.category === 'financial') return { text: 'Open your banking app and just look at the number. No decisions yet.', duration: item.duration_minutes && item.duration_minutes > 0 ? item.duration_minutes : 5 };
+  return { text: 'Write down three things you remember about this task.', duration: itemDuration };
 }
 
 function sortForSmallAction(list: DBBaggageItem[]): DBBaggageItem[] {
@@ -671,17 +673,32 @@ interface ActionModalProps {
 }
 
 function ActionModal({ item, onStatusChange, onClose }: ActionModalProps) {
+  const { t } = useTranslation();
   const ms    = getMicroStep(item);
   const TOTAL = ms.duration * 60;
 
-  const [rem, setRem]         = useState(TOTAL);
-  const [running, setRunning] = useState(true);
-  const [done, setDone]       = useState(false);
-  const [saving, setSaving]   = useState(false);
-  const finishedRef           = useRef(false);
+  const [rem, setRem]                 = useState(TOTAL);
+  const [running, setRunning]         = useState(false); // Tidak langsung start otomatis
+  const [hasStarted, setHasStarted]   = useState(false);
+  const [done, setDone]               = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const finishedRef                   = useRef(false);
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const wLabel = item.urgency === 'high' ? 'Heavy' : item.urgency === 'medium' ? 'Moderate' : 'Light';
+
+  // Sesuaikan durasi secara manual (-1 menit atau +1 menit), batas 1 s.d. 60 menit
+  const adjustDuration = (deltaSeconds: number) => {
+    setRem((prev) => {
+      const next = prev + deltaSeconds;
+      return Math.max(60, Math.min(3600, next));
+    });
+  };
+
+  const handleStart = () => {
+    setHasStarted(true);
+    setRunning(true);
+  };
 
   // Dipanggil sekali saja: timer habis atau "Finish Early".
   const finish = useCallback(() => {
@@ -770,15 +787,52 @@ function ActionModal({ item, onStatusChange, onClose }: ActionModalProps) {
   return (
     <div className="flex flex-col items-center text-center">
       <span className="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[12px] uppercase tracking-wider font-bold">
-        {ms.duration}-Minute Protected Sprint
+        {Math.ceil(rem / 60)}-Minute Protected Sprint
       </span>
       <h3 className="font-headline-lg text-headline-lg text-on-surface mt-2">One thing. That's all.</h3>
       <p className="font-label-md text-label-md text-primary font-bold mt-2 max-w-sm">{item.title}</p>
       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-sm">{ms.text}</p>
 
+      {/* Timer Display with Increment / Decrement Controls */}
       <div className="my-6 p-6 rounded-2xl bg-surface-container-low w-full flex flex-col items-center">
-        <div className="font-display-lg text-[64px] leading-tight text-primary font-extrabold tracking-tight tabular-nums">{fmt(rem)}</div>
-        <div className="font-label-sm text-label-sm text-on-surface-variant mt-1">Focus window {running ? 'running' : 'paused'}</div>
+        <div className="flex items-center justify-center gap-4 sm:gap-6 w-full">
+          {/* Decrement by 1 minute */}
+          <button
+            type="button"
+            onClick={() => adjustDuration(-60)}
+            disabled={rem <= 60}
+            aria-label="Kurangi durasi 1 menit"
+            title="-1 menit"
+            className="w-10 h-10 rounded-full bg-surface-container-highest hover:bg-surface-variant active:scale-95 text-on-surface flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[20px]">remove</span>
+          </button>
+
+          {/* Countdown Display */}
+          <div className="font-display-lg text-[56px] sm:text-[64px] leading-tight text-primary font-extrabold tracking-tight tabular-nums select-none">
+            {fmt(rem)}
+          </div>
+
+          {/* Increment by 1 minute */}
+          <button
+            type="button"
+            onClick={() => adjustDuration(60)}
+            disabled={rem >= 3600}
+            aria-label="Tambah durasi 1 menit"
+            title="+1 menit"
+            className="w-10 h-10 rounded-full bg-surface-container-highest hover:bg-surface-variant active:scale-95 text-on-surface flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[20px]">add</span>
+          </button>
+        </div>
+
+        <div className="font-label-sm text-label-sm text-on-surface-variant mt-2 flex items-center gap-1.5">
+          {!hasStarted ? (
+            <span>{t('unwind.readyToStart', 'Ready when you are • Adjust with ±1 min')}</span>
+          ) : (
+            <span>Focus window {running ? 'running' : 'paused'} • ±1 min</span>
+          )}
+        </div>
       </div>
 
       <div className="bg-[#fef9c3]/60 p-4 rounded-xl flex items-center gap-3 text-left w-full mb-6">
@@ -789,20 +843,42 @@ function ActionModal({ item, onStatusChange, onClose }: ActionModalProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setRunning(r => !r)}
-          className="px-6 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_3px_0_#5516be] active:translate-y-[2px] transition-all cursor-pointer"
-        >
-          {running ? 'Pause' : 'Resume'}
-        </button>
-        <button
-          type="button"
-          onClick={finish}
-          className="px-5 py-2.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-colors cursor-pointer"
-        >
-          Finish Early
-        </button>
+        {!hasStarted ? (
+          <>
+            <button
+              type="button"
+              onClick={handleStart}
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md font-bold shadow-[0_3px_0_#5516be] hover:translate-y-[1px] hover:shadow-[0_2px_0_#5516be] active:translate-y-[3px] active:shadow-none transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+              <span>{t('unwind.startFocus', 'Start Focus')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-3 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setRunning(r => !r)}
+              className="px-6 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-[0_3px_0_#5516be] active:translate-y-[2px] transition-all cursor-pointer"
+            >
+              {running ? t('unwind.pauseBreathing', 'Pause') : t('unwind.resume', 'Resume')}
+            </button>
+            <button
+              type="button"
+              onClick={finish}
+              className="px-5 py-2.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-colors cursor-pointer"
+            >
+              {t('unwind.finishEarly', 'Finish Early')}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -811,12 +887,26 @@ function ActionModal({ item, onStatusChange, onClose }: ActionModalProps) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Unwind() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [openModal, setOpenModal]     = useState<ModalId>(null);
   const [activeSound, setActiveSound] = useState<SoundKey>('rain');
   const [playing, setPlaying]         = useState(false);
   const [volume, setVolume]           = useState(65);
   const [muted, setMuted]             = useState(false);
   const [soundError, setSoundError]   = useState<string | null>(null);
+
+  useEffect(() => {
+    const targetId = (location.state as { scrollTo?: string } | null)?.scrollTo;
+    if (targetId) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(targetId) || document.getElementById(`${targetId}-section`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Small Action: daftar item dari My Bag (tabel baggage_items)
   const [items, setItems]             = useState<DBBaggageItem[]>([]);
@@ -838,7 +928,7 @@ export default function Unwind() {
     try {
       const { data, error } = await supabase
         .from('baggage_items')
-        .select('id,title,category,urgency,action_step,status,created_at')
+        .select('*')
         .in('status', ['pending', 'in_progress'])
         .order('created_at', { ascending: false });
 
@@ -1043,18 +1133,6 @@ export default function Unwind() {
                 <p className="font-body-lg text-body-lg text-on-surface-variant mt-4 max-w-xl">
                   Nothing needs to be solved right now. Give your nervous system two quiet minutes before carrying anything else.
                 </p>
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  {[
-                    { dot: 'bg-secondary', label: '0% expectation' },
-                    { dot: 'bg-primary',   label: 'Pick any drawer' },
-                    { dot: 'bg-tertiary',  label: 'Stay as long as needed' },
-                  ].map(({ dot, label }) => (
-                    <span key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md">
-                      <span className={`w-2 h-2 rounded-full ${dot}`} />
-                      {label}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           </section>
@@ -1171,7 +1249,7 @@ export default function Unwind() {
           </section>
 
           {/* ═════════════════════════════════════════ SECTION 02: RESETS ══ */}
-          <section className="py-8" id="quick-resets-section">
+          <section className="py-8 scroll-mt-6 md:scroll-mt-8" id="quick-resets">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
               <div>
                 <h2 className="font-headline-lg text-headline-lg text-on-surface">{'\u{2728}'} Quick Resets</h2>

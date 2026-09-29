@@ -5,6 +5,7 @@ export interface BaggageItem {
   category: 'academic' | 'deadline' | 'social' | 'personal' | 'health' | 'financial' | 'other';
   urgency: 'high' | 'medium' | 'low';
   actionStep: string;
+  estimatedMinutes?: number;
 }
 
 export interface UnpackResult {
