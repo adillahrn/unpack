@@ -452,22 +452,7 @@ export default function PaxChat({ onClose }: PaxChatProps) {
         {/* Input bar */}
         <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-lowest px-space-md py-space-sm">
           <div className="flex items-end gap-space-xs">
-            <button
-              type="button"
-              onClick={() =>
-                handleQuickPrompt(
-                  locale === 'id'
-                    ? 'Berikan aku tips menjaga kesehatan mental hari ini'
-                    : 'Give me a quick mental health tip for today'
-                )
-              }
-              disabled={isTyping}
-              className="w-10 h-10 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant hover:text-on-secondary-container flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              aria-label="Mental health tips"
-              title="Mental health tips"
-            >
-              <span className="material-symbols-outlined text-[20px]">lightbulb</span>
-            </button>
+
             <textarea
               ref={inputRef}
               value={input}
