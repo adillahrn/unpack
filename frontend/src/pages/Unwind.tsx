@@ -988,10 +988,14 @@ export default function Unwind() {
   }, []);
 
   // ─── Audio ───────────────────────────────────────────────────────────────────
-  // Volume & mute disinkronkan ke semua elemen audio.
+  // Volume & mute disinkronkan ke semua elemen audio dengan multiplier untuk track yang kurang keras.
   useEffect(() => {
-    Object.values(audioRefs.current).forEach(el => {
-      if (el) el.volume = muted ? 0 : volume / 100;
+    const multipliers: Record<string, number> = { rain: 1.5, library: 1.5 };
+    Object.entries(audioRefs.current).forEach(([key, el]) => {
+      if (el) {
+        const mult = multipliers[key] || 1.0;
+        el.volume = muted ? 0 : Math.min(1, (volume / 100) * mult);
+      }
     });
   }, [volume, muted]);
 
@@ -1017,7 +1021,9 @@ export default function Unwind() {
     const el = audioRefs.current[key];
     if (!el) return;
 
-    el.volume = muted ? 0 : volume / 100;
+    const multipliers: Record<string, number> = { rain: 1.5, library: 1.5 };
+    const mult = multipliers[key] || 1.0;
+    el.volume = muted ? 0 : Math.min(1, (volume / 100) * mult);
 
     const seek = () => { el.currentTime = loopStartFor(el); };
     if (el.readyState >= 1) seek();
