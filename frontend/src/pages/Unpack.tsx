@@ -643,16 +643,7 @@ export default function Unpack() {
         )}
 
         {/* Loading state */}
-        {unpackState.isLoading && (
-          <div className="w-full mt-space-xl pt-space-lg border-t border-surface-variant/40">
-            <div className="flex flex-col items-center justify-center py-space-xl gap-space-md">
-              <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center animate-pulse">
-                <span className="material-symbols-outlined text-primary text-[32px] animate-spin">progress_activity</span>
-              </div>
-              <p className="text-body-lg text-on-surface-variant">{t('unpack.loading')}</p>
-            </div>
-          </div>
-        )}
+        {unpackState.isLoading && <UnpackLoadingState />}
 
         {/* Bottom Step 02 Anchor Bar */}
         <div className="bg-surface-container-highest/60 backdrop-blur-md rounded-2xl p-space-lg md:p-space-xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-space-lg border border-outline-variant/30">
@@ -763,6 +754,87 @@ function BaggageCard({
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Animated loading state shown while AI processes the mind dump ─────────────
+const LOADING_MESSAGES = [
+  { icon: '🔍', text: 'Reading your mind dump…' },
+  { icon: '🧠', text: 'Identifying what matters most…' },
+  { icon: '🗂️', text: 'Sorting thoughts into categories…' },
+  { icon: '⚡', text: 'Detecting priorities and urgency…' },
+  { icon: '✨', text: 'Wrapping up — almost there…' },
+];
+
+function UnpackLoadingState() {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setMsgIndex(i => (i + 1) % LOADING_MESSAGES.length);
+        setVisible(true);
+      }, 350);
+    }, 2600);
+    return () => clearInterval(cycle);
+  }, []);
+
+  const current = LOADING_MESSAGES[msgIndex]!;
+
+  return (
+    <div className="w-full mt-space-xl pt-space-lg border-t border-surface-variant/40">
+      <div className="flex flex-col items-center justify-center py-space-xl gap-space-lg">
+        {/* Animated logo */}
+        <div
+          className="relative w-20 h-20"
+          style={{ animation: 'logoLoadBounce 1.4s ease-in-out infinite' }}
+        >
+          <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center shadow-lg">
+            <img src="/unpack_logo.png" alt="Pax" className="w-11 h-11 object-contain" />
+          </div>
+          {/* Pulsing ring */}
+          <div className="absolute inset-0 rounded-full border-2 border-primary/40 animate-ping" />
+        </div>
+
+        {/* Cycling message */}
+        <div
+          className="flex flex-col items-center gap-2 transition-opacity duration-300"
+          style={{ opacity: visible ? 1 : 0 }}
+        >
+          <span className="text-3xl">{current.icon}</span>
+          <p className="font-body-lg text-body-lg text-on-surface-variant text-center max-w-xs">
+            {current.text}
+          </p>
+        </div>
+
+        {/* Progress dots */}
+        <div className="flex items-center gap-1.5">
+          {LOADING_MESSAGES.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-500 ${
+                i === msgIndex
+                  ? 'w-4 h-2 bg-primary'
+                  : 'w-2 h-2 bg-surface-variant'
+              }`}
+            />
+          ))}
+        </div>
+
+        <p className="font-label-sm text-label-sm text-outline/70 italic">
+          This usually takes 5 – 15 seconds
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes logoLoadBounce {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-10px); }
+        }
+      `}</style>
     </div>
   );
 }

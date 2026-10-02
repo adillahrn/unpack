@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useTranslation } from '@/i18n';
+import CelebrationModal from '@/components/CelebrationModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ModalId = 'bubble' | 'breathe' | 'rain' | 'float' | 'plant' | 'action' | null;
@@ -894,6 +895,7 @@ export default function Unwind() {
   const [volume, setVolume]           = useState(65);
   const [muted, setMuted]             = useState(false);
   const [soundError, setSoundError]   = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     const targetId = (location.state as { scrollTo?: string } | null)?.scrollTo;
@@ -965,6 +967,7 @@ export default function Unwind() {
         ? prev.filter(i => i.id !== id)
         : prev.map(i => (i.id === id ? { ...i, status } : i))
     );
+    if (status === 'completed') setShowCelebration(true);
     return true;
   }, []);
 
@@ -1427,6 +1430,15 @@ export default function Unwind() {
           </section>
         </div>
       </div>
+
+      {/* Celebration overlay */}
+      {showCelebration && (
+        <CelebrationModal
+          onClose={() => setShowCelebration(false)}
+          message="🪨 Pebble cleared!"
+          subMessage="One less thing weighing on your mind. Nice work!"
+        />
+      )}
     </div>
   );
 }

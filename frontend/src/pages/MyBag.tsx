@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import LoadingState from '@/components/states/LoadingState';
 import EmptyState from '@/components/states/EmptyState';
 import { useTranslation } from '@/i18n';
+import CelebrationModal from '@/components/CelebrationModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Urgency = 'high' | 'medium' | 'low';
@@ -179,6 +180,7 @@ export default function MyBag() {
 
   const [toast, setToast] = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const fetchBagItems = useCallback(async () => {
     setIsLoading(true);
@@ -217,6 +219,7 @@ export default function MyBag() {
       const { error: err } = await supabase.from('baggage_items').update({ status: newStatus }).eq('id', id);
       if (err) throw err;
       setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item)));
+      if (newStatus === 'completed') setShowCelebration(true);
     } catch (err) {
       console.error('Failed to change status:', err);
     }
@@ -460,6 +463,15 @@ export default function MyBag() {
           </div>
         )}
       </section>
+
+      {/* Celebration overlay */}
+      {showCelebration && (
+        <CelebrationModal
+          onClose={() => setShowCelebration(false)}
+          message="✅ Item resolved!"
+          subMessage="One pebble lighter. Your bag thanks you."
+        />
+      )}
     </div>
   );
 }
