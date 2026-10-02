@@ -403,24 +403,27 @@ export default function PaxChat({ onClose }: PaxChatProps) {
                   : "If you feel like you might hurt yourself or you're in immediate danger, please contact local emergency services or someone you trust."}
               </p>
               <div className="flex flex-col gap-space-xs">
-                <a
-                  href="tel:119"
-                  className="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-error text-on-error text-label-md font-bold shadow-sm hover:opacity-90 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[18px]">call</span>
-                  Into The Light — 119 ext 8
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setShowDistressCard(false)}
-                  className="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-surface-container-lowest text-on-surface text-label-md font-medium hover:bg-surface-container-low transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">person</span>
-                  {locale === 'id' ? 'Bicara dengan Orang Terpercaya' : 'Talk to Someone You Trust'}
-                </button>
+                {/* Into The Light — static info, not a link */}
+                <div className="flex items-center gap-space-xs px-space-lg py-space-sm rounded-2xl bg-error/10 border border-error/20">
+                  <span className="material-symbols-outlined text-error text-[18px] shrink-0">call</span>
+                  <div>
+                    <p className="text-label-sm font-bold text-on-error-container">Into The Light Indonesia</p>
+                    <p className="text-label-md font-bold text-error tracking-wide">119 ext 8</p>
+                  </div>
+                </div>
+                {/* Talk to someone — static note */}
+                <div className="flex items-center gap-space-xs px-space-lg py-space-sm rounded-2xl bg-surface-container-lowest border border-outline-variant/30">
+                  <span className="material-symbols-outlined text-on-surface-variant text-[18px] shrink-0">group</span>
+                  <p className="text-body-sm text-on-surface-variant">
+                    {locale === 'id'
+                      ? 'Atau cerita ke orang yang kamu percayai — teman, keluarga, atau konselor.'
+                      : 'Or talk to someone you trust — a friend, family member, or counselor.'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
+
 
           {/* Typing indicator */}
           {isTyping && (

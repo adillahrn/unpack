@@ -26,7 +26,7 @@ function playTring() {
       osc.type = 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, ctx.currentTime + start);
-      gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + start + 0.012);
+      gain.gain.linearRampToValueAtTime(0.42, ctx.currentTime + start + 0.012); // Volume at 1.5x scale (0.28 * 1.5 = 0.42)
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + 0.65);
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + 0.7);
