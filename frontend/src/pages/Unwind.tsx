@@ -39,9 +39,9 @@ const SOUNDS: { key: SoundKey; emoji: string; title: string; desc: string }[] = 
 // File ada di folder /public
 const SOUND_FILES: Record<SoundKey, string> = {
   rain: '/rainy-day-in-the-forest.mp3',
-  library: '/sounds/quiet-library.mp3',
+  library: '/quiet-library.mp3',
   wind: '/wind-in-the-trees.mp3',
-  cafe: '/sounds/late-night-cafe.mp3',
+  cafe: '/late-night-cafe.mp3',
   night: '/room-ambience-quiet-room.mp3',
 };
 
